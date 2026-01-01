@@ -1,0 +1,17 @@
+{
+  "name": "@accountant/shared",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Shared types, utilities, and configuration for accountant platform",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "types:generate": "echo 'Run from root: npm run types:generate'"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.89.0"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

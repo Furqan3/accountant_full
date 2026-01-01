@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .bg-custom-gradient {
+    background-image: linear-gradient(
+      to bottom,
+      #004250,
+      #0A2432
+    );
+  }
+   .bg-header-gradient {
+    background-image: linear-gradient(
+      to bottom,
+      #004250,
+      #004250
+    );
+  }
+}
+
