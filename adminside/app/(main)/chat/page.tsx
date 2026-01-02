@@ -1,161 +1,193 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 import ChatSidebar, { ChatConversation } from "@/components/chat/chat-sidebar";
 import ChatMessages, { Message } from "@/components/chat/chat-messages";
 
-const conversationsData: ChatConversation[] = [
-  {
-    id: "1",
-    name: "Tech Solutions Ltd.",
-    lastMessage: "Thanks for the update on the confirmation statement",
-    timestamp: "10:30 AM",
-    unread: 2,
-  },
-  {
-    id: "2",
-    name: "Innovatech Corp.",
-    lastMessage: "When can we schedule the filing?",
-    timestamp: "Yesterday",
-  },
-  {
-    id: "3",
-    name: "FutureSoft Inc.",
-    lastMessage: "Payment has been processed",
-    timestamp: "2 days ago",
-  },
-  {
-    id: "4",
-    name: "Alpha Systems Ltd.",
-    lastMessage: "Please send the documents",
-    timestamp: "3 days ago",
-  },
-];
-
-const messagesData: Record<string, Message[]> = {
-  "1": [
-    {
-      id: "1",
-      text: "Hello, I need help with my confirmation statement.",
-      sender: "client",
-      timestamp: "10:00 AM",
-    },
-    {
-      id: "2",
-      text: "Hi! I'd be happy to help you with that. Can you provide your company registration number?",
-      sender: "user",
-      timestamp: "10:05 AM",
-    },
-    {
-      id: "3",
-      text: "Yes, it's 12345678",
-      sender: "client",
-      timestamp: "10:07 AM",
-    },
-    {
-      id: "4",
-      text: "Thank you. I've located your company. Your confirmation statement is due next month. Would you like me to proceed with the filing?",
-      sender: "user",
-      timestamp: "10:10 AM",
-    },
-    {
-      id: "5",
-      text: "Yes, please proceed. What documents do I need to provide?",
-      sender: "client",
-      timestamp: "10:15 AM",
-    },
-    {
-      id: "6",
-      text: "Hello, I need help with my confirmation statement.",
-      sender: "client",
-      timestamp: "10:00 AM",
-    },
-    {
-      id: "7",
-      text: "Hi! I'd be happy to help you with that. Can you provide your company registration number?",
-      sender: "user",
-      timestamp: "10:25 AM",
-    },
-    {
-      id: "8",
-      text: "Yes, it's 12345678",
-      sender: "client",
-      timestamp: "10:07 AM",
-    },
-    {
-      id: "9",
-      text: "Thank you. I've located your company. Your confirmation statement is due next month. Would you like me to proceed with the filing?",
-      sender: "user",
-      timestamp: "10:10 AM",
-    },
-    {
-      id: "10",
-      text: "Yes, please proceed. What documents do I need to provide?",
-      sender: "client",
-      timestamp: "10:15 AM",
-    },
-  ],
-  "2": [
-    {
-      id: "1",
-      text: "Good morning! I wanted to check on our filing schedule.",
-      sender: "client",
-      timestamp: "9:00 AM",
-    },
-    {
-      id: "2",
-      text: "Good morning! Let me pull up your account details.",
-      sender: "user",
-      timestamp: "9:05 AM",
-    },
-  ],
-  "3": [
-    {
-      id: "1",
-      text: "Payment confirmation received. Thank you!",
-      sender: "client",
-      timestamp: "2 days ago",
-    },
-  ],
-  "4": [
-    {
-      id: "1",
-      text: "I need to submit some additional documents for our registration.",
-      sender: "client",
-      timestamp: "3 days ago",
-    },
-  ],
-};
-
 export default function ChatPage() {
-  const [selectedConversationId, setSelectedConversationId] = useState<string>("1");
-  const [messages, setMessages] = useState<Record<string, Message[]>>(messagesData);
+  const [conversations, setConversations] = useState<ChatConversation[]>([]);
+  const [selectedConversationId, setSelectedConversationId] = useState<string>("");
+  const [messages, setMessages] = useState<Record<string, Message[]>>({});
+  const [isLoadingConversations, setIsLoadingConversations] = useState(true);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
 
-  const selectedConversation = conversationsData.find(
+  // Fetch conversations on mount
+  useEffect(() => {
+    fetchConversations();
+  }, []);
+
+  // Fetch messages when conversation is selected
+  useEffect(() => {
+    if (selectedConversationId && !messages[selectedConversationId]) {
+      fetchMessages(selectedConversationId);
+    }
+  }, [selectedConversationId]);
+
+  // Set up real-time subscriptions
+  useEffect(() => {
+    if (!selectedConversationId) return;
+
+    // Subscribe to new messages for the selected conversation
+    const channel = supabase
+      .channel(`admin-messages:${selectedConversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `order_id=eq.${selectedConversationId}`,
+        },
+        (payload) => {
+          console.log('New message received:', payload);
+          const newMessage = payload.new as any;
+
+          const formattedMessage: Message = {
+            id: newMessage.id,
+            text: newMessage.message_text || '',
+            sender: newMessage.is_admin ? 'user' : 'client',
+            timestamp: new Date(newMessage.created_at).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit'
+            }),
+          };
+
+          setMessages((prev) => ({
+            ...prev,
+            [selectedConversationId]: [
+              ...(prev[selectedConversationId] || []),
+              formattedMessage,
+            ],
+          }));
+
+          // Update conversation's last message
+          setConversations((prev) =>
+            prev.map((conv) =>
+              conv.id === selectedConversationId
+                ? {
+                    ...conv,
+                    lastMessage: newMessage.message_text || 'Attachment',
+                    timestamp: new Date(newMessage.created_at).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    }),
+                  }
+                : conv
+            )
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedConversationId]);
+
+  const fetchConversations = async () => {
+    try {
+      setIsLoadingConversations(true);
+      const res = await fetch('/api/messages/conversations');
+      const data = await res.json();
+
+      if (res.ok && data.conversations) {
+        setConversations(data.conversations);
+        // Auto-select first conversation
+        if (data.conversations.length > 0 && !selectedConversationId) {
+          setSelectedConversationId(data.conversations[0].id);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
+    } finally {
+      setIsLoadingConversations(false);
+    }
+  };
+
+  const fetchMessages = async (orderId: string) => {
+    try {
+      setIsLoadingMessages(true);
+      const res = await fetch(`/api/messages/${orderId}`);
+      const data = await res.json();
+
+      if (res.ok && data.messages) {
+        const formattedMessages = data.messages.map((msg: any) => ({
+          id: msg.id,
+          text: msg.message_text || '',
+          sender: msg.is_admin ? 'user' : 'client',
+          timestamp: new Date(msg.created_at).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+          }),
+        }));
+
+        setMessages((prev) => ({
+          ...prev,
+          [orderId]: formattedMessages,
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    } finally {
+      setIsLoadingMessages(false);
+    }
+  };
+
+  const handleSendMessage = async (messageText: string) => {
+    if (!selectedConversationId) return;
+
+    try {
+      const res = await fetch('/api/messages/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: selectedConversationId,
+          messageText,
+          attachments: [],
+        }),
+      });
+
+      if (!res.ok) {
+        console.error('Failed to send message');
+      }
+      // Message will be added via real-time subscription
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  };
+
+  const selectedConversation = conversations.find(
     (conv) => conv.id === selectedConversationId
   );
 
-  const handleSendMessage = (messageText: string) => {
-    if (!selectedConversationId) return;
+  if (isLoadingConversations) {
+    return (
+      <div className="h-full flex items-center justify-center bg-white rounded-2xl shadow-sm">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+          <p className="text-gray-500">Loading conversations...</p>
+        </div>
+      </div>
+    );
+  }
 
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      text: messageText,
-      sender: "user",
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    };
-
-    setMessages((prev) => ({
-      ...prev,
-      [selectedConversationId]: [...(prev[selectedConversationId] || []), newMessage],
-    }));
-  };
+  if (conversations.length === 0) {
+    return (
+      <div className="h-full flex items-center justify-center bg-white rounded-2xl shadow-sm">
+        <div className="text-center">
+          <p className="text-gray-500 text-lg">No conversations yet</p>
+          <p className="text-gray-400 text-sm mt-2">Messages will appear here when customers contact you</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex overflow-hidden bg-white rounded-2xl shadow-sm">
       {/* Chat Sub-Sidebar */}
       <ChatSidebar
-        conversations={conversationsData}
+        conversations={conversations}
         selectedConversationId={selectedConversationId}
         onSelectConversation={setSelectedConversationId}
       />
@@ -166,6 +198,9 @@ export default function ChatPage() {
           conversationName={selectedConversation.name}
           messages={messages[selectedConversationId] || []}
           onSendMessage={handleSendMessage}
+          isLoading={isLoadingMessages}
+          orderDetails={selectedConversation.orderDetails}
+          user={selectedConversation.user}
         />
       )}
     </div>

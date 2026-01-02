@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Building } from "lucide-react";
+import { Search } from "lucide-react";
 import { useState } from "react";
 
 type DashboardHeaderProps = {

@@ -44,9 +44,12 @@ export async function GET(request: Request) {
     console.log(`✅ Found ${data.items?.length || 0} companies from Companies House`);
 
     // Fetch detailed information for each company (including due dates)
-    // Limit to first 10 companies to avoid too many API calls
+    // Match frontend pattern - process all results
     const detailedCompanies = await Promise.all(
-      (data.items || []).slice(0, 10).map(async (item: any) => {
+      (data.items || []).map(async (item: any) => {
+        let confirmation_statement_due = undefined;
+        let accounts_due = undefined;
+
         try {
           // Fetch company profile to get confirmation statement and accounts due dates
           const profileUrl = `https://api.company-information.service.gov.uk/company/${item.company_number}`;
@@ -56,41 +59,29 @@ export async function GET(request: Request) {
             },
           });
 
-          if (!profileResponse.ok) {
-            console.warn(`Failed to fetch profile for ${item.company_number}`);
-            return {
-              company_number: item.company_number,
-              company_name: item.title,
-              company_status: item.company_status,
-              company_type: item.company_type,
-              date_of_creation: item.date_of_creation,
-              address: item.address,
-            };
+          if (profileResponse.ok) {
+            const profile = await profileResponse.json();
+            // Only use next_due field (match frontend pattern)
+            confirmation_statement_due = profile.confirmation_statement?.next_due;
+            accounts_due = profile.accounts?.next_due;
+          } else {
+            console.warn(`Failed to fetch profile for ${item.company_number}: ${profileResponse.status}`);
           }
-
-          const profile = await profileResponse.json();
-
-          return {
-            company_number: item.company_number,
-            company_name: item.title,
-            company_status: item.company_status,
-            company_type: item.company_type,
-            date_of_creation: item.date_of_creation,
-            confirmation_statement_due: profile.confirmation_statement?.next_due || profile.confirmation_statement?.overdue,
-            accounts_due: profile.accounts?.next_due || profile.accounts?.overdue,
-            address: item.address,
-          };
         } catch (error) {
           console.error(`Error fetching details for ${item.company_number}:`, error);
-          return {
-            company_number: item.company_number,
-            company_name: item.title,
-            company_status: item.company_status,
-            company_type: item.company_type,
-            date_of_creation: item.date_of_creation,
-            address: item.address,
-          };
         }
+
+        return {
+          id: item.company_number, // Use company_number as ID for external results
+          company_number: item.company_number,
+          company_name: item.title,
+          company_status: item.company_status,
+          company_type: item.company_type,
+          date_of_creation: item.date_of_creation,
+          confirmation_statement_due,
+          accounts_due,
+          address: item.address,
+        };
       })
     );
 

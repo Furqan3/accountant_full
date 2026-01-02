@@ -5,9 +5,23 @@ import { MessageSquare, Search } from "lucide-react";
 export type ChatConversation = {
   id: string;
   name: string;
+  companyName?: string;
   lastMessage: string;
   timestamp: string;
   unread?: number;
+  orderDetails?: {
+    orderId: string;
+    amount: number;
+    status: string;
+    companyName?: string;
+    companyNumber?: string;
+    services?: Array<{ name: string; quantity: number }>;
+    created_at?: string;
+  };
+  user?: {
+    name: string;
+    email: string;
+  } | null;
 };
 
 type ChatSidebarProps = {
@@ -63,15 +77,36 @@ export default function ChatSidebar({
                   </span>
                 </div>
 
+                {/* Company Name */}
+                {conversation.companyName && (
+                  <p className="text-xs text-gray-600 mb-1 truncate">
+                    {conversation.companyName}
+                  </p>
+                )}
+
+                {/* Order Details */}
+                {conversation.orderDetails && (
+                  <div className="mb-1.5 space-y-0.5">
+                    <p className="text-xs text-gray-500">
+                      Order #{conversation.orderDetails.orderId.slice(0, 8)}... • £{(conversation.orderDetails.amount / 100).toFixed(2)}
+                    </p>
+                    {conversation.orderDetails.services && conversation.orderDetails.services.length > 0 && (
+                      <p className="text-xs text-gray-500 truncate">
+                        {conversation.orderDetails.services.map(s => s.name).join(', ')}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-gray-600 truncate">
                     {conversation.lastMessage}
                   </p>
-                  {conversation.unread && (
+                  {conversation.unread ? (
                     <span className="ml-2 bg-primary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0">
                       {conversation.unread}
                     </span>
-                  )}
+                  ) : null}
                 </div>
               </div>
             </div>
