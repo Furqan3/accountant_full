@@ -35,7 +35,7 @@ export default function StatsCards({
         return (
           <div
             key={item.id}
-            className="bg-white rounded-2xl p-5 flex items-center justify-between shadow-sm"
+            className="bg-white rounded-2xl p-5 flex items-center justify-between "
           >
             {/* Left */}
             <div>

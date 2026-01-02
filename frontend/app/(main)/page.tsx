@@ -88,7 +88,7 @@ const handleRedirect = () => {
         <div className="max-w-7xl mx-auto lg:flex lg:items-center lg:gap-16">
           {/* LEFT IMAGE */}
           <div className="lg:w-1/2 mb-10 lg:mb-0">
-            <img src="get_in_touch.png" alt="Team and Stats" className="rounded-xl shadow-lg w-full" />
+            <img src="get_in_touch.png" alt="Team and Stats" className="rounded-xl  w-full" />
           </div>
 
           {/* RIGHT TEXT CONTENT */}
@@ -167,7 +167,7 @@ const handleRedirect = () => {
         {/* Image - positioned to overlap 50% in this section and 50% in next section */}
         <div className="absolute left-0 right-0 bottom-0 translate-y-1/2 z-10">
           <div className="max-w-7xl mx-auto px-6 pt-30">
-            <div className="overflow-hidden rounded-lg shadow-xl">
+            <div className="overflow-hidden rounded-lg ">
               <img
                 src="paper.png"
                 alt="Financial documents with magnifying glass, ruler, and pencils"
@@ -290,7 +290,7 @@ const handleRedirect = () => {
         <div className="max-w-7xl mx-auto px-6 mt-16">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Card 1: Confirmation Statement */}
-            <div className="bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
+            <div className="bg-white rounded-2xl  overflow-hidden flex flex-col">
               {/* Icon */}
               <div className="p-8">
                 <div className="w-16 h-16 bg-teal-600 rounded-xl flex items-center justify-center mx-auto">
@@ -393,7 +393,7 @@ const handleRedirect = () => {
             </div>
 
             {/* Card 3: Company Dissolution */}
-            <div className="bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
+            <div className="bg-white rounded-2xl  overflow-hidden flex flex-col">
               {/* Icon */}
               <div className="p-8">
                 <div className="w-16 h-16 bg-teal-600 rounded-xl flex items-center justify-center mx-auto">
@@ -463,7 +463,7 @@ const handleRedirect = () => {
   onClick={handleRedirect}
   className="mt-10 bg-white  hover:text-black text-teal-700 font-semibold py-4 px-10 
              rounded-full text-lg transition-all duration-300 ease-in-out
-             hover:shadow-lg hover:scale-105"
+             hover: hover:scale-105"
 >
   Get Started
 </button>

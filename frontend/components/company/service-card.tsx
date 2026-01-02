@@ -26,7 +26,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
 }) => {
   return (
     <div
-      className={`bg-white m-5 shadow-lg border rounded-lg p-6 transition ${
+      className={`bg-white m-5  border rounded-lg p-6 transition ${
         selected ? "border-teal-600 bg-teal-50" : "border-gray-300"
       }`}
     >

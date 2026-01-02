@@ -97,7 +97,7 @@ export default function OrderCard({ order, onStatusUpdate }: OrderCardProps) {
     }
   };
   return (
-    <div className="bg-white rounded-2xl p-1 shadow-sm space-y-4">
+    <div className="bg-white rounded-2xl p-1  space-y-4">
       
       <div className=" p-4 border border-primary/20 rounded-lg">
       <div className="flex items-start justify-between">
@@ -124,7 +124,7 @@ export default function OrderCard({ order, onStatusUpdate }: OrderCardProps) {
 
             {/* Dropdown Menu */}
             {isDropdownOpen && (
-              <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[140px] overflow-hidden">
+              <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg  z-10 min-w-[140px] overflow-hidden">
                 {STATUS_OPTIONS.map((status) => (
                   <button
                     key={status}

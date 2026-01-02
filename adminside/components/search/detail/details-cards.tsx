@@ -48,7 +48,7 @@ export default function DetailsCards({ data }: { data: DetailItem }) {
           return (
             <div
               key={key}
-              className="bg-white rounded-2xl p-5 text-primary flex items-center gap-4 shadow-sm w-full max-w-sm"
+              className="bg-white rounded-2xl p-5 text-primary flex items-center gap-4  w-full max-w-sm"
             >
               {/* Icon */}
               <div className="w-12 h-12 rounded-full flex items-center justify-center bg-blue-100">

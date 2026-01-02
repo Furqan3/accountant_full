@@ -24,7 +24,7 @@ export default function DashboardHeader({
   onSortChange,
 }: DashboardHeaderProps) {
   return (
-    <div className="flex flex-col gap-4 md:flex-row bg-white p-5 md:items-center md:justify-between rounded-2xl shadow-sm">
+    <div className="flex flex-col gap-4 md:flex-row bg-white p-5 md:items-center md:justify-between rounded-2xl ">
       
       
       <div>

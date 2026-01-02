@@ -18,7 +18,7 @@ export default function MessageModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-      <div className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-lg shadow-xl">
+      <div className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-lg ">
         {/* Close button */}
         <button
           onClick={onClose}

@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import ChatSidebar, { ChatConversation } from "@/components/chat/chat-sidebar";
 import ChatMessages, { Message } from "@/components/chat/chat-messages";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function ChatPage() {
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
@@ -51,6 +53,7 @@ export default function ChatPage() {
               hour: '2-digit',
               minute: '2-digit'
             }),
+            attachments: newMessage.attachments || [],
           };
 
           setMessages((prev) => ({
@@ -76,6 +79,38 @@ export default function ChatPage() {
                 : conv
             )
           );
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `order_id=eq.${selectedConversationId}`,
+        },
+        (payload) => {
+          console.log('Message updated:', payload);
+          const updatedMessage = payload.new as any;
+
+          const formattedMessage: Message = {
+            id: updatedMessage.id,
+            text: updatedMessage.message_text || '',
+            sender: updatedMessage.is_admin ? 'user' : 'client',
+            timestamp: new Date(updatedMessage.created_at).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit'
+            }),
+            attachments: updatedMessage.attachments || [],
+          };
+
+          setMessages((prev) => ({
+            ...prev,
+            [selectedConversationId]:
+              prev[selectedConversationId]?.map((msg) =>
+                msg.id === formattedMessage.id ? formattedMessage : msg
+              ) || [],
+          }));
         }
       )
       .subscribe();
@@ -120,6 +155,7 @@ export default function ChatPage() {
             hour: '2-digit',
             minute: '2-digit'
           }),
+          attachments: msg.attachments || [],
         }));
 
         setMessages((prev) => ({
@@ -134,7 +170,10 @@ export default function ChatPage() {
     }
   };
 
-  const handleSendMessage = async (messageText: string) => {
+  const handleSendMessage = async (
+    messageText: string,
+    attachments: Array<{ url: string; type: string; name: string; size: number }> = []
+  ) => {
     if (!selectedConversationId) return;
 
     try {
@@ -143,8 +182,8 @@ export default function ChatPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           orderId: selectedConversationId,
-          messageText,
-          attachments: [],
+          messageText: messageText || null,
+          attachments,
         }),
       });
 
@@ -163,7 +202,7 @@ export default function ChatPage() {
 
   if (isLoadingConversations) {
     return (
-      <div className="h-full flex items-center justify-center bg-white rounded-2xl shadow-sm">
+      <div className="h-full flex items-center justify-center bg-white rounded-2xl ">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
           <p className="text-gray-500">Loading conversations...</p>
@@ -174,7 +213,7 @@ export default function ChatPage() {
 
   if (conversations.length === 0) {
     return (
-      <div className="h-full flex items-center justify-center bg-white rounded-2xl shadow-sm">
+      <div className="h-full flex items-center justify-center bg-white rounded-2xl ">
         <div className="text-center">
           <p className="text-gray-500 text-lg">No conversations yet</p>
           <p className="text-gray-400 text-sm mt-2">Messages will appear here when customers contact you</p>
@@ -184,7 +223,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="h-full flex overflow-hidden bg-white rounded-2xl shadow-sm">
+    <div className="h-full flex overflow-hidden bg-white rounded-2xl ">
       {/* Chat Sub-Sidebar */}
       <ChatSidebar
         conversations={conversations}
@@ -196,6 +235,7 @@ export default function ChatPage() {
       {selectedConversation && (
         <ChatMessages
           conversationName={selectedConversation.name}
+          conversationId={selectedConversationId}
           messages={messages[selectedConversationId] || []}
           onSendMessage={handleSendMessage}
           isLoading={isLoadingMessages}
@@ -203,6 +243,9 @@ export default function ChatPage() {
           user={selectedConversation.user}
         />
       )}
+
+      {/* Toast Notifications */}
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 }

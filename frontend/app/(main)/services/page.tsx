@@ -157,7 +157,7 @@ export default function ServicesPage() {
               return (
                 <div
                   key={index}
-                  className="bg-white rounded-xl p-8 border border-gray-200 hover:shadow-xl transition-shadow"
+                  className="bg-white rounded-xl p-8 border border-gray-200 hover: transition-shadow"
                 >
                   <div className="flex items-start gap-4 mb-4">
                     <div className="bg-teal-100 p-3 rounded-lg flex-shrink-0">

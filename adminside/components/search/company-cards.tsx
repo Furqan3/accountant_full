@@ -29,7 +29,7 @@ export default function CompanyCard({ company }: { company: Company }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl p-1 shadow-sm border border-primary/20 hover:shadow-md transition">
+    <div className="bg-white rounded-2xl p-1  border border-primary/20 hover:shadow-md transition">
       <div className="p-4 flex items-center justify-between gap-4">
         <div className="flex-1">
           {/* Company name and number */}

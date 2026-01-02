@@ -124,7 +124,7 @@ export default function AboutPage() {
                 return (
                   <div
                     key={index}
-                    className="bg-gray-50 rounded-xl p-6 hover:shadow-lg transition-shadow border border-gray-100"
+                    className="bg-gray-50 rounded-xl p-6 hover: transition-shadow border border-gray-100"
                   >
                     <div className="bg-teal-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
                       <Icon className="w-6 h-6 text-teal-700" />
@@ -156,7 +156,7 @@ export default function AboutPage() {
             {team.map((member, index) => (
               <div
                 key={index}
-                className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-shadow"
+                className="bg-white rounded-xl p-6 border border-gray-200 hover: transition-shadow"
               >
                 <div className="w-20 h-20 bg-gradient-to-br from-teal-400 to-teal-900 rounded-full mb-4 flex items-center justify-center">
                   <span className="text-white text-2xl font-bold">

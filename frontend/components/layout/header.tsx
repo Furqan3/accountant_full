@@ -54,7 +54,7 @@ const Header: React.FC = () => {
   }
 
   return (
-    <header className="relative flex h-14 items-center justify-between px-5 bg-white rounded-lg shadow-sm">
+    <header className="relative flex h-14 items-center justify-between px-5 bg-white rounded-lg ">
       <Logo />
 
       {/* Desktop Navigation - Centered */}
@@ -126,7 +126,7 @@ const Header: React.FC = () => {
 
             {/* User Dropdown */}
             {userMenuOpen && (
-              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-2 z-50">
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg  border border-gray-100 py-2 z-50">
                 <Link
                   href="/profile"
                   className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50"
@@ -205,7 +205,7 @@ const Header: React.FC = () => {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="absolute top-full left-0 right-0 bg-white shadow-lg rounded-b-lg p-4 md:hidden z-50">
+        <div className="absolute top-full left-0 right-0 bg-white  rounded-b-lg p-4 md:hidden z-50">
           <nav className="flex flex-col space-y-3 text-gray-600">
             {navLinks.map((link) => (
               <Link

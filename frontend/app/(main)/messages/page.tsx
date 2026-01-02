@@ -114,7 +114,7 @@ function MessagesPageContent() {
         <Header />
       </div>
 
-      <main className="flex-1 flex flex-col md:flex-row m-4 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+      <main className="flex-1 flex flex-col md:flex-row m-4 bg-white rounded-xl  border border-gray-200 overflow-hidden"
         style={{ height: 'calc(100vh - 120px)' }}>
         {orders.length === 0 ? (
           <div className="flex-1 flex items-center justify-center py-12">

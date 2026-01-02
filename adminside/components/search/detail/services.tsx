@@ -7,7 +7,7 @@ type Service = {
 
 export default function ServiceList({ services = [] }: { services: Service[] }) {
   return (
-    <div className="h-full flex flex-col  bg-white p-6 rounded-2xl shadow-sm overflow-hidden">
+    <div className="h-full flex flex-col  bg-white p-6 rounded-2xl  overflow-hidden">
       <div className="flex-shrink-0">
         <h1 className="text-2xl font-semibold text-gray-900 mb-4">Services</h1>
       </div>

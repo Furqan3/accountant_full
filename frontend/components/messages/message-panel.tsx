@@ -15,6 +15,8 @@ import {
   ChevronUp,
 } from "lucide-react"
 import Image from "next/image"
+import AttachmentDisplay from "@/components/shared/attachment-display"
+import ImageLightbox from "@/components/shared/image-lightbox"
 
 interface Message {
   id: string
@@ -75,6 +77,9 @@ export default function MessagePanel({ orderId }: MessagePanelProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [offset, setOffset] = useState(0)
   const LIMIT = 20
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [lightboxImages, setLightboxImages] = useState<Array<{ url: string; name: string }>>([])
+  const [lightboxIndex, setLightboxIndex] = useState(0)
 
   // Load cached data and fetch fresh data on mount
   useEffect(() => {
@@ -592,48 +597,16 @@ export default function MessagePanel({ orderId }: MessagePanelProps) {
 
                   {/* Attachments */}
                   {message.attachments && message.attachments.length > 0 && (
-                    <div className="mt-2 space-y-2">
-                      {message.attachments.map((attachment, index) => (
-                        <div key={index}>
-                          {attachment.type.startsWith("image/") ? (
-                            <a
-                              href={attachment.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="block cursor-pointer"
-                            >
-                              <Image
-                                src={attachment.url}
-                                alt={attachment.name}
-                                width={200}
-                                height={200}
-                                className="rounded max-w-full h-auto hover:opacity-90 transition"
-                              />
-                            </a>
-                          ) : (
-                            <a
-                              href={attachment.url}
-                              download={attachment.name}
-                              className={`flex items-center gap-2 p-2 rounded ${
-                                isOwn
-                                  ? "bg-teal-700 hover:bg-teal-800"
-                                  : "bg-gray-200 hover:bg-gray-300"
-                              }`}
-                            >
-                              {getFileIcon(attachment.type)}
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium truncate">
-                                  {attachment.name}
-                                </p>
-                                <p className="text-xs opacity-75">
-                                  {formatFileSize(attachment.size)}
-                                </p>
-                              </div>
-                              <Download className="w-4 h-4" />
-                            </a>
-                          )}
-                        </div>
-                      ))}
+                    <div className="mt-2">
+                      <AttachmentDisplay
+                        attachments={message.attachments}
+                        variant={isOwn ? "user" : "admin"}
+                        onImageClick={(images, index) => {
+                          setLightboxImages(images)
+                          setLightboxIndex(index)
+                          setLightboxOpen(true)
+                        }}
+                      />
                     </div>
                   )}
 
@@ -728,6 +701,14 @@ export default function MessagePanel({ orderId }: MessagePanelProps) {
           Supported files: Images, PDF, Word, Excel, Text (Max 10MB)
         </p>
       </div>
+
+      {/* Lightbox */}
+      <ImageLightbox
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        images={lightboxImages}
+        initialIndex={lightboxIndex}
+      />
     </div>
   )
 }

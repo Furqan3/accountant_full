@@ -148,9 +148,9 @@ export default function CompanyPlansPage() {
               return (
                 <div
                   key={index}
-                  className={`relative bg-white rounded-2xl shadow-lg border-2 ${
+                  className={`relative bg-white rounded-2xl  border-2 ${
                     plan.popular ? "border-teal-600 scale-105" : "border-gray-200"
-                  } p-8 hover:shadow-xl transition-all`}
+                  } p-8 hover: transition-all`}
                 >
                   {plan.popular && (
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2">

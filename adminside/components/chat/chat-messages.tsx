@@ -1,13 +1,22 @@
 "use client";
 
-import { Send } from "lucide-react";
-import { useState } from "react";
+import { Send, X, Paperclip, Loader2, Info } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import AttachmentDisplay from "@/components/shared/attachment-display";
+import ImageLightbox from "@/components/shared/image-lightbox";
+import { toast } from "react-toastify";
 
 export type Message = {
   id: string;
-  text: string;
+  text: string | null;
   sender: "user" | "client";
   timestamp: string;
+  attachments?: Array<{
+    url: string;
+    type: string;
+    name: string;
+    size: number;
+  }>;
 };
 
 type OrderDetails = {
@@ -27,8 +36,12 @@ type User = {
 
 type ChatMessagesProps = {
   conversationName: string;
+  conversationId: string;
   messages: Message[];
-  onSendMessage: (message: string) => void;
+  onSendMessage: (
+    message: string,
+    attachments?: Array<{ url: string; type: string; name: string; size: number }>
+  ) => void;
   isLoading?: boolean;
   orderDetails?: OrderDetails;
   user?: User | null;
@@ -36,6 +49,7 @@ type ChatMessagesProps = {
 
 export default function ChatMessages({
   conversationName,
+  conversationId,
   messages,
   onSendMessage,
   isLoading = false,
@@ -43,41 +57,150 @@ export default function ChatMessages({
   user,
 }: ChatMessagesProps) {
   const [newMessage, setNewMessage] = useState("");
+  const [pendingAttachments, setPendingAttachments] = useState<
+    Array<{ url: string; type: string; name: string; size: number }>
+  >([]);
+  const [uploading, setUploading] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImages, setLightboxImages] = useState<Array<{ url: string; name: string }>>([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [showOrderDetails, setShowOrderDetails] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File size must be less than 10MB");
+      return;
+    }
+
+    // Validate file type
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "text/plain",
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Invalid file type. Allowed: images, PDF, Word, Excel, text files");
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("orderId", conversationId);
+
+      const response = await fetch("/api/messages/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Upload failed");
+      }
+
+      const data = await response.json();
+      setPendingAttachments((prev) => [...prev, data.attachment]);
+      toast.success("File uploaded successfully");
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      toast.error(error.message || "Failed to upload file");
+    } finally {
+      setUploading(false);
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const handleSend = () => {
-    if (newMessage.trim()) {
-      onSendMessage(newMessage);
+    if (newMessage.trim() || pendingAttachments.length > 0) {
+      onSendMessage(newMessage.trim() || "", pendingAttachments);
       setNewMessage("");
+      setPendingAttachments([]);
     }
   };
 
   return (
     <div className="flex-1 flex flex-col h-full">
-      {/* Chat Header with Order Details */}
-      <div className="p-5 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-primary/5">
-        <div className="flex items-center justify-between mb-3">
+      {/* Chat Header */}
+      <div className="p-4 border-b border-gray-200 bg-white">
+        <div className="flex items-center justify-between">
           <div className="flex-1">
-            <h2 className="text-xl font-bold text-primary">
+            <h2 className="text-lg font-bold text-gray-900">
               {conversationName}
-              {orderDetails?.companyName && (
-                <span className="text-base font-normal text-gray-600 ml-2">
-                  - {orderDetails.companyName}
-                </span>
-              )}
             </h2>
             {user && (
-              <p className="text-sm text-gray-600 mt-0.5">
+              <p className="text-sm text-gray-500">
                 {user.email}
               </p>
             )}
+            {orderDetails && (
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-xs text-gray-500">
+                  Order #{orderDetails.orderId.slice(0, 8).toUpperCase()}
+                </span>
+                <span className="text-xs text-gray-400">•</span>
+                <span
+                  className={`text-xs px-2 py-0.5 rounded-full ${
+                    orderDetails.status === "completed"
+                      ? "bg-green-100 text-green-700"
+                      : orderDetails.status === "pending"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : orderDetails.status === "processing"
+                      ? "bg-blue-100 text-blue-700"
+                      : "bg-gray-100 text-gray-700"
+                  }`}
+                >
+                  {orderDetails.status}
+                </span>
+                <span className="text-xs text-gray-400">•</span>
+                <span className="text-xs font-medium text-gray-700">
+                  £{(orderDetails.amount / 100).toFixed(2)}
+                </span>
+              </div>
+            )}
           </div>
-          <span className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full border border-green-200">
-            Active
-          </span>
+          <div className="flex items-center gap-2">
+            {orderDetails && (
+              <button
+                onClick={() => setShowOrderDetails(!showOrderDetails)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition text-gray-600"
+                title="Order details"
+              >
+                <Info className="w-5 h-5" />
+              </button>
+            )}
+            <span className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full border border-green-200">
+              Active
+            </span>
+          </div>
         </div>
 
-        {orderDetails && (
-          <div className="mt-3 text-sm space-y-2 bg-white/70 rounded-lg p-4 border border-gray-200 shadow-sm">
+        {showOrderDetails && orderDetails && (
+          <div className="mt-3 text-sm space-y-2 bg-gray-50 rounded-lg p-4 border border-gray-200 animate-in slide-in-from-top duration-200">
             {/* Order ID and Date */}
             <div className="flex items-center justify-between pb-2 border-b border-gray-200">
               <div>
@@ -175,7 +298,20 @@ export default function ChatMessages({
                     : "bg-primary/10 text-gray-900 border border-gray-200"
                 }`}
               >
-                <p className="text-sm">{message.text}</p>
+                {message.text && <p className="text-sm">{message.text}</p>}
+                {message.attachments && message.attachments.length > 0 && (
+                  <div className="mt-2">
+                    <AttachmentDisplay
+                      attachments={message.attachments}
+                      variant={message.sender === "client" ? "admin" : "user"}
+                      onImageClick={(images, index) => {
+                        setLightboxImages(images);
+                        setLightboxIndex(index);
+                        setLightboxOpen(true);
+                      }}
+                    />
+                  </div>
+                )}
                 <p
                   className={`text-xs mt-1 ${
                     message.sender === "user" ? "text-white/70" : "text-gray-500"
@@ -189,26 +325,80 @@ export default function ChatMessages({
         )}
       </div>
 
+      {/* Pending Attachments Preview */}
+      {pendingAttachments.length > 0 && (
+        <div className="p-3 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs text-gray-600 font-medium">
+              Attachments ({pendingAttachments.length}):
+            </p>
+            <button
+              onClick={() => setPendingAttachments([])}
+              className="text-xs text-red-600 hover:text-red-700 flex items-center gap-1"
+            >
+              <X className="w-3 h-3" />
+              Clear all
+            </button>
+          </div>
+          <AttachmentDisplay attachments={pendingAttachments} variant="user" />
+        </div>
+      )}
+
       {/* Message Input */}
       <div className="p-4 bg-white border-t border-gray-200">
         <div className="flex gap-2 text-black">
           <input
+            ref={fileInputRef}
+            type="file"
+            onChange={handleFileSelect}
+            className="hidden"
+            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="p-3 text-gray-600 hover:bg-gray-100 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Attach file"
+          >
+            {uploading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Paperclip className="w-5 h-5" />
+            )}
+          </button>
+          <input
             type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            onKeyDown={(e) => e.key === "Enter" && !uploading && handleSend()}
             placeholder="Type a message..."
             className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+            disabled={uploading}
           />
           <button
             onClick={handleSend}
-            className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition flex items-center gap-2"
+            disabled={uploading || (!newMessage.trim() && pendingAttachments.length === 0)}
+            className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Send className="w-4 h-4" />
-            Send
+            {uploading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <>
+                <Send className="w-4 h-4" />
+                Send
+              </>
+            )}
           </button>
         </div>
       </div>
+
+      {/* Lightbox */}
+      <ImageLightbox
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        images={lightboxImages}
+        initialIndex={lightboxIndex}
+      />
     </div>
   );
 }

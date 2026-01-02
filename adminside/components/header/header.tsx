@@ -31,7 +31,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
   };
 
   return (
-    <header className="w-full bg-white p-4 flex items-center justify-between shadow-sm  ">
+    <header className="w-full bg-white p-4 flex items-center justify-between   ">
       <Menu
         onClick={onMenuClick}
         className="w-6 h-6 text-gray-600 cursor-pointer hover:text-gray-900 transition-colors"
@@ -67,7 +67,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
         {/* Dropdown Menu */}
         {isDropdownOpen && (
-          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg  border border-gray-200 py-2 z-50">
             <button
               onClick={() => {
                 setIsDropdownOpen(false);

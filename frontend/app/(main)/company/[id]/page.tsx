@@ -228,7 +228,7 @@ export default function CompanyDetailsPage({ params }: { params: Promise<{ id: s
                       <Link
                         key={idx}
                         href={`/company/${id}/plans`}
-                        className="block bg-gradient-to-br from-teal-50 to-blue-50 border-2 border-teal-600 rounded-xl p-6 hover:shadow-xl transition-all hover:scale-[1.02]"
+                        className="block bg-gradient-to-br from-teal-50 to-blue-50 border-2 border-teal-600 rounded-xl p-6 hover: transition-all hover:scale-[1.02]"
                       >
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex-1">

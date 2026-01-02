@@ -1,19 +1,13 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
-export interface Database {
+export type Database = {
   public: {
     Tables: {
       admin_users: {
         Row: {
           id: string
           user_id: string
-          role: 'admin' | 'super_admin' | 'support'
+          role: "admin" | "super_admin" | "support"
           full_name: string | null
           email: string
           avatar_url: string | null
@@ -25,7 +19,7 @@ export interface Database {
         Insert: {
           id?: string
           user_id: string
-          role?: 'admin' | 'super_admin' | 'support'
+          role?: "admin" | "super_admin" | "support"
           full_name?: string | null
           email: string
           avatar_url?: string | null
@@ -37,7 +31,7 @@ export interface Database {
         Update: {
           id?: string
           user_id?: string
-          role?: 'admin' | 'super_admin' | 'support'
+          role?: "admin" | "super_admin" | "support"
           full_name?: string | null
           email?: string
           avatar_url?: string | null
@@ -80,12 +74,12 @@ export interface Database {
           stripe_payment_intent_id: string | null
           amount: number
           currency: string
-          status: 'pending' | 'processing' | 'completed' | 'cancelled'
+          status: "pending" | "processing" | "completed" | "cancelled"
           service_type: string | null
           metadata: Json | null
           created_at: string
           updated_at: string
-          payment_status: 'pending' | 'paid' | 'failed' | 'refunded'
+          payment_status: "pending" | "paid" | "failed" | "refunded"
         }
         Insert: {
           id?: string
@@ -93,12 +87,12 @@ export interface Database {
           stripe_payment_intent_id?: string | null
           amount: number
           currency?: string
-          status?: 'pending' | 'processing' | 'completed' | 'cancelled'
+          status?: "pending" | "processing" | "completed" | "cancelled"
           service_type?: string | null
           metadata?: Json | null
           created_at?: string
           updated_at?: string
-          payment_status?: 'pending' | 'paid' | 'failed' | 'refunded'
+          payment_status?: "pending" | "paid" | "failed" | "refunded"
         }
         Update: {
           id?: string
@@ -106,12 +100,12 @@ export interface Database {
           stripe_payment_intent_id?: string | null
           amount?: number
           currency?: string
-          status?: 'pending' | 'processing' | 'completed' | 'cancelled'
+          status?: "pending" | "processing" | "completed" | "cancelled"
           service_type?: string | null
           metadata?: Json | null
           created_at?: string
           updated_at?: string
-          payment_status?: 'pending' | 'paid' | 'failed' | 'refunded'
+          payment_status?: "pending" | "paid" | "failed" | "refunded"
         }
       }
       messages: {
@@ -158,7 +152,7 @@ export interface Database {
           user_id: string
           search_history: Json
           notification_preferences: Json
-          theme: 'light' | 'dark' | 'system'
+          theme: "light" | "dark" | "system"
           created_at: string
           updated_at: string
         }
@@ -167,7 +161,7 @@ export interface Database {
           user_id: string
           search_history?: Json
           notification_preferences?: Json
-          theme?: 'light' | 'dark' | 'system'
+          theme?: "light" | "dark" | "system"
           created_at?: string
           updated_at?: string
         }
@@ -176,7 +170,7 @@ export interface Database {
           user_id?: string
           search_history?: Json
           notification_preferences?: Json
-          theme?: 'light' | 'dark' | 'system'
+          theme?: "light" | "dark" | "system"
           created_at?: string
           updated_at?: string
         }

@@ -32,7 +32,7 @@ export default function SearchHeader({
   };
 
   return (
-   <div className="flex items-center gap-4 bg-white p-5 rounded-2xl shadow-sm">
+   <div className="flex items-center gap-4 bg-white p-5 rounded-2xl ">
   {/* Title on the left */}
   <h1 className="text-2xl font-semibold text-primary whitespace-nowrap">
     {title}

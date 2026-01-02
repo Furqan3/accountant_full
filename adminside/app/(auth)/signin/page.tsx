@@ -7,23 +7,20 @@ import { useAuth } from "@/contexts/auth-context";
 
 export default function SignIn() {
   const router = useRouter();
-  const { signIn, user, adminUser, loading: authLoading } = useAuth();
+  const { signIn, user, loading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // If already signed in with admin user loaded, redirect to dashboard
+  // If the user is already signed in, redirect to the dashboard.
+  // The middleware and dashboard layout will handle authorization.
   useEffect(() => {
-    console.log("🔄 SignIn useEffect - authLoading:", authLoading, "user:", !!user, "adminUser:", !!adminUser);
-    if (!authLoading && user && adminUser) {
-      console.log("✅ All conditions met - redirecting to dashboard...");
-      // Use window.location for hard navigation to avoid any router issues
-      window.location.href = "/dashboard";
-    } else {
-      console.log("⏳ Waiting... authLoading:", authLoading, "hasUser:", !!user, "hasAdminUser:", !!adminUser);
+    if (!authLoading && user) {
+      console.log("✅ User is signed in, redirecting to dashboard...");
+      router.push("/dashboard");
     }
-  }, [user, adminUser, authLoading]);
+  }, [user, authLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +37,7 @@ export default function SignIn() {
         console.log("✅ Sign in successful, waiting for redirect...");
         // Loading state will remain true until redirect happens
         // This prevents multiple submissions
+        router.push("/dashboard");
       }
     } catch (err) {
       setError("An unexpected error occurred");

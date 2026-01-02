@@ -102,13 +102,13 @@ export default function ProfilePage() {
       <PageHero title="My Profile" />
 
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-8">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-lg  border border-gray-200 overflow-hidden">
           {/* Header Section with User Initial */}
           <div className="bg-gradient-to-r from-teal-600 to-teal-700 h-32"></div>
 
           <div className="px-6 pb-6">
             <div className="relative -mt-16 mb-6">
-              <div className="w-32 h-32 rounded-full border-4 border-white bg-teal-700 flex items-center justify-center text-white text-5xl font-bold shadow-lg">
+              <div className="w-32 h-32 rounded-full border-4 border-white bg-teal-700 flex items-center justify-center text-white text-5xl font-bold ">
                 {userInitial}
               </div>
             </div>

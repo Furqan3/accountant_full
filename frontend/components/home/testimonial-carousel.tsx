@@ -46,7 +46,7 @@ const TestimonialCarousel = () => {
       <div className="max-w-4xl mx-auto px-6">
         <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-12">What Our Clients Say</h2>
 
-        <div className="relative bg-white rounded-2xl shadow-xl p-8 md:p-12">
+        <div className="relative bg-white rounded-2xl  p-8 md:p-12">
           <div className="flex flex-col items-center text-center">
             <img
               src={testimonials[current].image || "/placeholder.svg"}
