@@ -72,6 +72,28 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/signin', request.url));
   }
 
+  // If user is authenticated, verify they are an admin
+  if (user && isProtectedPage) {
+    const { data: adminUser, error: adminError } = await supabase
+      .from('admin_users')
+      .select('id, user_id, role')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (adminError) {
+      console.error("Middleware - Error checking admin status:", adminError);
+    }
+
+    if (!adminUser) {
+      console.log("Middleware - User is not an admin, redirecting to signin");
+      // Clear session and redirect to signin
+      await supabase.auth.signOut();
+      return NextResponse.redirect(new URL('/signin?error=unauthorized', request.url));
+    }
+
+    console.log("Middleware - Admin verified:", adminUser.role);
+  }
+
   // If user is authenticated and trying to access auth pages, redirect to dashboard
   if (user && isAuthPage) {
     console.log("Middleware - Redirecting to dashboard (already authenticated)");
