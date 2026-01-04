@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { createClient } from "@/lib/supabase"
 import { useAuth } from "@/context/auth-context"
+import { useSocket } from "@/context/socket-context"
 import { toast } from "react-toastify"
 import {
   Send,
@@ -172,56 +172,83 @@ export default function MessagePanel({ orderId }: MessagePanelProps) {
     }
   }
 
-  // Set up real-time subscription
+  // Set up Socket.io real-time subscription
+  const { socket } = useSocket()
+  const orderIdRef = useRef<string>(orderId)
+
+  // Keep ref in sync with orderId
   useEffect(() => {
-    if (!orderId) return
-
-    const supabase = createClient()
-
-    // Subscribe to new messages
-    const channel = supabase
-      .channel(`messages:${orderId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `order_id=eq.${orderId}`,
-        },
-        (payload) => {
-          console.log("New message received:", payload)
-          const newMessage = payload.new as Message
-          setMessages((prev) => {
-            const updated = [...prev, newMessage]
-            saveToCache(updated) // Update cache
-            return updated
-          })
-          scrollToBottom()
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "messages",
-          filter: `order_id=eq.${orderId}`,
-        },
-        (payload) => {
-          console.log("Message updated:", payload)
-          const updatedMessage = payload.new as Message
-          setMessages((prev) =>
-            prev.map((msg) => (msg.id === updatedMessage.id ? updatedMessage : msg))
-          )
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
+    orderIdRef.current = orderId
   }, [orderId])
+
+  // Set up socket listeners ONCE (not dependent on orderId)
+  useEffect(() => {
+    if (!socket) return
+
+    // Listen for new messages from this order
+    const handleNewMessage = (data: any) => {
+      const currentOrderId = orderIdRef.current
+      if (data.orderId === currentOrderId) {
+        console.log("CLIENT: New message received via Socket.io:", data.message);
+        const newMessage = data.message;
+
+        setMessages((prev) => {
+          // Check if message already exists to prevent duplicates
+          if (prev.some(msg => msg.id === newMessage.id)) {
+            console.log("Message already exists, skipping duplicate:", newMessage.id);
+            return prev;
+          }
+          const updated = [...prev, newMessage]
+          saveToCache(updated)
+          return updated
+        })
+        scrollToBottom()
+
+        // Show notification if message is from admin
+        if (newMessage.is_admin) {
+          toast.info("New message from support", {
+            position: "top-right",
+            autoClose: 4000,
+          });
+        }
+      }
+    }
+
+    // Listen for message updates
+    const handleMessageUpdate = (data: any) => {
+      const currentOrderId = orderIdRef.current
+      if (data.orderId === currentOrderId) {
+        console.log("Message updated via Socket.io:", data.message)
+        setMessages((prev) =>
+          prev.map((msg) => (msg.id === data.message.id ? data.message : msg))
+        )
+      }
+    }
+
+    socket.on("new-message", handleNewMessage)
+    socket.on("message-updated", handleMessageUpdate)
+
+    // Cleanup on unmount only
+    return () => {
+      socket.off("new-message", handleNewMessage)
+      socket.off("message-updated", handleMessageUpdate)
+    }
+  }, [socket]) // Only depend on socket
+
+  // Handle joining/leaving room when orderId changes
+  useEffect(() => {
+    if (!socket || !orderId) return
+
+    // Join the order room
+    socket.emit("join-order-room", orderId)
+    console.log(`Joined room: order:${orderId}`)
+
+    // Leave room on cleanup
+    return () => {
+      socket.emit("leave-order-room", orderId)
+      console.log(`Left room: order:${orderId}`)
+    }
+  }, [socket, orderId])
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -356,6 +383,10 @@ export default function MessagePanel({ orderId }: MessagePanelProps) {
   }
 
   const sendMessage = async () => {
+    if (!socket) {
+      toast.error("Socket not connected. Cannot send message.")
+      return
+    }
     if (!messageText.trim() && attachments.length === 0) {
       toast.error("Please enter a message or attach a file")
       return
@@ -363,29 +394,27 @@ export default function MessagePanel({ orderId }: MessagePanelProps) {
 
     setSending(true)
     try {
-      const response = await fetch("/api/messages/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          orderId,
-          messageText: messageText.trim() || null,
-          attachments,
-        }),
+      const payload = {
+        orderId,
+        messageText: messageText.trim() || null,
+        attachments,
+        fromAdminApp: false,
+      }
+
+      socket.emit("send-message", payload, (ack: { success: boolean, error?: string }) => {
+        if (ack.success) {
+          setMessageText("")
+          setAttachments([])
+          // Message will be added via the 'new-message' broadcast event
+        } else {
+          toast.error(ack.error || "Failed to send message")
+        }
+        setSending(false)
       })
 
-      const data = await response.json()
-
-      if (response.ok) {
-        setMessageText("")
-        setAttachments([])
-        // Message will be added via realtime subscription
-      } else {
-        toast.error(data.error || "Failed to send message")
-      }
     } catch (error) {
-      console.error("Error sending message:", error)
-      toast.error("Failed to send message")
-    } finally {
+      console.error("Error sending message via socket:", error)
+      toast.error("An unexpected error occurred while sending the message.")
       setSending(false)
     }
   }

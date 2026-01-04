@@ -102,10 +102,8 @@ export default function ChatSidebar({
                   <p className="text-sm text-gray-600 truncate">
                     {conversation.lastMessage}
                   </p>
-                  {conversation.unread ? (
-                    <span className="ml-2 bg-primary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0">
-                      {conversation.unread}
-                    </span>
+                  {conversation.unread && conversation.unread > 0 ? (
+                    <span className="ml-2 w-2.5 h-2.5 bg-primary rounded-full flex-shrink-0"></span>
                   ) : null}
                 </div>
               </div>

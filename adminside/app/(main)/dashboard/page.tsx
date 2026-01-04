@@ -3,6 +3,7 @@ import DashboardHeader from "@/components/dashboard/dashboard-header";
 import StatsCards from "@/components/dashboard/stats-cards";
 import OrderCard, { Order } from "@/components/dashboard/order-card";
 import { useEffect, useState, useCallback } from "react";
+import { useSocket } from "@/contexts/socket-context";
 
 export default function DashboardPage() {
   const [statsData, setData] = useState<any>([]);
@@ -11,6 +12,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState("new");
+  const { socket } = useSocket();
 
   // Fetch stats data
   const fetchStats = useCallback(async () => {
@@ -88,6 +90,22 @@ export default function DashboardPage() {
     };
     loadData();
   }, [refreshDashboard]);
+
+  // Real-time updates via Socket.io
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleDashboardRefresh = () => {
+      console.log("Dashboard refresh event received via socket.");
+      refreshDashboard();
+    };
+
+    socket.on("dashboard-refresh", handleDashboardRefresh);
+
+    return () => {
+      socket.off("dashboard-refresh", handleDashboardRefresh);
+    };
+  }, [socket, refreshDashboard]);
 
   return (
     <div className="h-full flex flex-col gap-6">

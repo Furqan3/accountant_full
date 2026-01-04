@@ -64,3 +64,6 @@ adminside/.next/
 adminside/out/
 adminside/build/
 adminside/dist/ 
+socket-server/.env.local
+socket-server/node_modules/
+socket-server/.env

@@ -38,21 +38,33 @@ export async function GET() {
 
     console.log('📋 Fetching profiles for user IDs:', userIds);
 
-    // Fetch all profiles for these users
+    // Fetch all user data (auth.users has email, profiles might not)
+    const { data: users, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
+
+    if (usersError) {
+      console.error('❌ Error fetching users:', usersError);
+    }
+
+    // Fetch profiles for additional info
     const { data: profiles, error: profilesError } = await supabaseAdmin
       .from('profiles')
-      .select('id, full_name, email')
+      .select('id, full_name')
       .in('id', userIds);
 
     if (profilesError) {
       console.error('❌ Error fetching profiles:', profilesError);
-    } else {
-      console.log('✅ Fetched profiles:', profiles);
     }
+
+    console.log('✅ Fetched users and profiles');
 
     // Create a map of profiles for quick lookup
     const profileMap = new Map(
       profiles?.map((p: any) => [p.id, p]) || []
+    );
+
+    // Create a map of users (from auth) for email lookup
+    const userMap = new Map(
+      users?.users?.map((u: any) => [u.id, u]) || []
     );
 
     // Group messages by order_id and get the latest message for each order
@@ -115,11 +127,12 @@ export async function GET() {
         console.error('Error parsing metadata:', error);
       }
 
-      // Get user profile from the map
+      // Get user profile and auth user from the maps
       const userProfile = profileMap.get(conv.order.user_id);
+      const authUser = userMap.get(conv.order.user_id);
 
       // Fallback: full_name -> email -> 'Unknown User'
-      const userName = userProfile?.full_name || userProfile?.email || 'Unknown User';
+      const userName = userProfile?.full_name || authUser?.email || 'Unknown User';
 
       return {
         id: conv.orderId,
@@ -140,9 +153,9 @@ export async function GET() {
           companyNumber,
           services,
         },
-        user: userProfile ? {
-          name: userProfile.full_name || userProfile.email,
-          email: userProfile.email,
+        user: authUser ? {
+          name: userProfile?.full_name || authUser.email,
+          email: authUser.email,
         } : null,
       };
     });

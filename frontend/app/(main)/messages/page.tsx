@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react"
 import { useAuth } from "@/context/auth-context"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useSocket } from "@/context/socket-context"
 import Header from "@/components/layout/header"
 import MessagePanel from "@/components/messages/message-panel"
 import { MessageCircle, Package, Loader2 } from "lucide-react"
@@ -24,6 +25,7 @@ function MessagesPageContent() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { socket } = useSocket()
   const [orders, setOrders] = useState<Order[]>([])
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -48,6 +50,63 @@ function MessagesPageContent() {
       setSelectedOrderId(orders[0].id)
     }
   }, [searchParams, orders])
+
+  // Listen for new messages to update unread counts
+  useEffect(() => {
+    if (!socket || !user) return
+
+    // Join all order rooms for this user
+    orders.forEach(order => {
+      socket.emit("join-order-room", order.id)
+    })
+
+    // Listen for new messages
+    socket.on("new-message", (data) => {
+      const newMessage = data.message
+
+      // If it's an admin message and not in the current conversation, increment unread count
+      if (newMessage.is_admin && data.orderId !== selectedOrderId) {
+        setOrders((prev) =>
+          prev.map((order) =>
+            order.id === data.orderId
+              ? { ...order, unread_count: (order.unread_count || 0) + 1 }
+              : order
+          )
+        )
+      }
+
+      // If it's an admin message and not in current view, show notification
+      if (newMessage.is_admin && data.orderId !== selectedOrderId) {
+        const order = orders.find(o => o.id === data.orderId)
+        const orderLabel = order ? `Order #${order.id.slice(0, 8)}` : 'Your order'
+        toast.info(`New message from support on ${orderLabel}`, {
+          position: "top-right",
+          autoClose: 4000,
+        })
+      }
+    })
+
+    return () => {
+      socket.off("new-message")
+      // Leave all rooms on unmount
+      orders.forEach(order => {
+        socket.emit("leave-order-room", order.id)
+      })
+    }
+  }, [socket, user, orders, selectedOrderId])
+
+  // When an order is selected, clear its unread count
+  useEffect(() => {
+    if (selectedOrderId) {
+      setOrders((prev) =>
+        prev.map((order) =>
+          order.id === selectedOrderId
+            ? { ...order, unread_count: 0 }
+            : order
+        )
+      )
+    }
+  }, [selectedOrderId])
 
   const fetchOrders = async () => {
     try {
@@ -157,9 +216,7 @@ function MessagesPageContent() {
                         </span>
                       </div>
                       {order.unread_count > 0 && (
-                        <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-                          {order.unread_count}
-                        </span>
+                        <span className="w-2.5 h-2.5 bg-teal-600 rounded-full flex-shrink-0"></span>
                       )}
                     </div>
 

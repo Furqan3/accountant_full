@@ -2,6 +2,7 @@
 "use client"
 import "./globals.css";
 import { AuthProvider } from "@/context/auth-context";
+import { SocketProvider } from "@/context/socket-context";
 import { CartProvider } from "@/context/cart-context";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
@@ -18,12 +19,14 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <AuthProvider>
-          <CartProvider>
-            <Elements stripe={stripePromise}>
-              {children}
-           <ToastContainer position="bottom-right" />
-            </Elements>
-          </CartProvider>
+          <SocketProvider>
+            <CartProvider>
+              <Elements stripe={stripePromise}>
+                {children}
+             <ToastContainer position="bottom-right" />
+              </Elements>
+            </CartProvider>
+          </SocketProvider>
         </AuthProvider>
       </body>
     </html>
