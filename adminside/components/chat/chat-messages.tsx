@@ -300,7 +300,7 @@ export default function ChatMessages({
               >
                 {message.text && <p className="text-sm">{message.text}</p>}
                 {message.attachments && message.attachments.length > 0 && (
-                  <div className="mt-2">
+                  <div className="mt-">
                     <AttachmentDisplay
                       attachments={message.attachments}
                       variant={message.sender === "client" ? "admin" : "user"}

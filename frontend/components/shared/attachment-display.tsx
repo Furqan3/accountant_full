@@ -27,31 +27,52 @@ export default function AttachmentDisplay({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  const handleDownload = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Download failed:', error);
+      window.open(url, '_blank');
+    }
+  };
+
   return (
     <div className="space-y-2">
       {/* All Attachments - Display as file links */}
       {attachments.map((file, index) => (
-        <a
+        <button
           key={index}
-          href={file.url}
-          download={file.name}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+          onClick={() => handleDownload(file.url, file.name)}
+          className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors ${
             variant === "user"
-              ? "border-teal-600/20 bg-teal-600/5 hover:bg-teal-600/10"
+              ? "border-primary/20 bg-primary/5 hover:bg-primary/10"
               : "border-gray-200 bg-gray-50 hover:bg-gray-100"
           }`}
         >
-          <FileIcon mimeType={file.type} className="w-8 h-8 flex-shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">
+          <FileIcon mimeType={file.type} className={`w-8 h-8 flex-shrink-0 ${variant === "user" ? "text-white" : "text-gray-700"}`} />
+          <div className="flex-1 min-w-0 text-left">
+            <p className={`text-sm font-medium truncate ${
+              variant === "user" ? "text-white" : "text-gray-900"
+            }`}>
               {file.name}
             </p>
-            <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+            <p className={`text-xs ${
+              variant === "user" ? "text-white" : "text-gray-500"
+            }`}>{formatFileSize(file.size)}</p>
           </div>
-          <Download className="w-5 h-5 text-gray-400 flex-shrink-0" />
-        </a>
+          <Download className={`w-5 h-5 flex-shrink-0 ${
+            variant === "user" ? "text-white" : "text-gray-400"
+          }`} />
+        </button>
       ))}
     </div>
   );
