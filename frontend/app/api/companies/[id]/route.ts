@@ -26,7 +26,24 @@ export async function GET(req: NextRequest, context: { params: Promise<Params> }
     }
 
     const data = await response.json();
-    return NextResponse.json(data);
+
+    // Transform Companies House data to our format for /pay page
+    const company = {
+      id: data.company_number || params.id,
+      company_number: data.company_number,
+      company_name: data.company_name,
+      company_status: data.company_status,
+      company_type: data.type,
+      date_of_creation: data.date_of_creation,
+      confirmation_statement_due: data.confirmation_statement?.next_due || null,
+      accounts_due: data.accounts?.next_due || null,
+      // For company/[id] page compatibility
+      confirmation_statement: data.confirmation_statement,
+      accounts: data.accounts,
+      registered_office_address: data.registered_office_address,
+    };
+
+    return NextResponse.json({ company, ...data });
   } catch (error: any) {
     return NextResponse.json({ error: "Internal server error", details: error.message }, { status: 500 });
   }

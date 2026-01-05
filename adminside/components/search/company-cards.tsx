@@ -1,7 +1,8 @@
 "use client";
 
-import { ChevronRight, Building2, Hash } from "lucide-react";
+import { ChevronRight, Building2, Hash, Square, CheckSquare } from "lucide-react";
 import Link from "next/link";
+import { useBulkSelection } from "@/contexts/bulk-selection-context";
 
 export type Company = {
   id: string;
@@ -15,6 +16,9 @@ export type Company = {
 };
 
 export default function CompanyCard({ company }: { company: Company }) {
+  const { isSelected, addCompany, removeCompany } = useBulkSelection();
+  const selected = isSelected(company.id);
+
   const formatDate = (dateString?: string) => {
     if (!dateString) return "Not set";
     try {
@@ -28,8 +32,18 @@ export default function CompanyCard({ company }: { company: Company }) {
     }
   };
 
+  const handleToggleSelect = () => {
+    if (selected) {
+      removeCompany(company.id);
+    } else {
+      addCompany(company);
+    }
+  };
+
   return (
-    <div className="bg-white rounded-2xl p-1  border border-primary/20 hover:shadow-md transition">
+    <div className={`bg-white rounded-2xl p-1 border hover:shadow-md transition ${
+      selected ? 'border-primary border-2' : 'border-primary/20'
+    }`}>
       <div className="p-4 flex items-center justify-between gap-4">
         <div className="flex-1">
           {/* Company name and number */}
@@ -71,14 +85,36 @@ export default function CompanyCard({ company }: { company: Company }) {
           </div>
         </div>
 
-        {/* View More button - vertically centered */}
-        <Link
-          href={`/search/${company.id}`}
-          className="flex items-center gap-1 text-sm bg-primary font-medium text-white hover:opacity-80 px-4 py-4 rounded-lg transition-opacity"
-        >
-          View More
-          <ChevronRight className="h-5 w-5" />
-        </Link>
+        {/* Action buttons - vertically centered */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleToggleSelect}
+            className={`flex items-center gap-1 text-sm font-medium px-4 py-4 rounded-lg transition ${
+              selected
+                ? 'bg-primary text-white hover:opacity-80'
+                : 'bg-white text-primary border border-primary hover:bg-primary/5'
+            }`}
+          >
+            {selected ? (
+              <>
+                <CheckSquare className="h-4 w-4" />
+                Selected
+              </>
+            ) : (
+              <>
+                <Square className="h-4 w-4" />
+                Select
+              </>
+            )}
+          </button>
+          <Link
+            href={`/search/${company.id}`}
+            className="flex items-center gap-1 text-sm bg-primary font-medium text-white hover:opacity-80 px-4 py-4 rounded-lg transition-opacity"
+          >
+            View More
+            <ChevronRight className="h-5 w-5" />
+          </Link>
+        </div>
       </div>
     </div>
   );

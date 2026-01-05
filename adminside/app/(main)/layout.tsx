@@ -4,6 +4,7 @@ import { useState } from "react";
 import Sidebar from "@/components/sidebar/sidebar";
 import Header from "@/components/header/header";
 import { useAuth } from "@/contexts/auth-context";
+import { BulkSelectionProvider } from "@/contexts/bulk-selection-context";
 
 export default function MainLayout({
   children,
@@ -31,16 +32,18 @@ export default function MainLayout({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {isSidebarOpen && <Sidebar />}
+    <BulkSelectionProvider>
+      <div className="flex h-screen overflow-hidden">
+        {isSidebarOpen && <Sidebar />}
 
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Header onMenuClick={toggleSidebar} />
+        <div className="flex flex-col flex-1 overflow-hidden">
+          <Header onMenuClick={toggleSidebar} />
 
-        <main className="flex-1 bg-gray-200 overflow-hidden p-6">
-          {children}
-        </main>
+          <main className="flex-1 bg-gray-200 overflow-hidden p-6">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </BulkSelectionProvider>
   );
 }

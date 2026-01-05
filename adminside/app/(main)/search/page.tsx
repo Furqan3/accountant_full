@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import SearchHeader from "@/components/search/search-header";
 import CompanyCard, { Company } from "@/components/search/company-cards";
+import { useBulkSelection } from "@/contexts/bulk-selection-context";
+import BulkSelectionSidebar from "@/components/search/bulk-selection-sidebar";
 
 export default function SearchPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -12,6 +14,7 @@ export default function SearchPage() {
   const [isSearchingExternal, setIsSearchingExternal] = useState(false);
   const [externalResults, setExternalResults] = useState<Company[]>([]);
   const [searchMode, setSearchMode] = useState<'local' | 'external'>('local');
+  const { selectedCompanies } = useBulkSelection();
 
   // Fetch companies from API
   useEffect(() => {
@@ -85,7 +88,7 @@ export default function SearchPage() {
   const isDisplayLoading = searchMode === 'external' ? isSearchingExternal : isLoading;
 
   return (
-    <div className="h-full flex flex-col gap-4">
+    <div className={`h-full flex flex-col gap-4 transition-all ${selectedCompanies.length > 0 ? 'pr-[320px]' : ''}`}>
       <div className="flex-shrink-0">
         <SearchHeader
           title="Search Companies"
@@ -177,6 +180,9 @@ export default function SearchPage() {
           </>
         )}
       </div>
+
+      {/* Bulk Selection Sidebar */}
+      <BulkSelectionSidebar />
     </div>
   );
 }
