@@ -59,14 +59,11 @@ frontside/build/
 frontside/dist/
 frontside/.vercel
 frontside/.turbo/
-frontside/.git
 adminside/.env.local
 adminside/.next/
 adminside/out/
 adminside/build/
 adminside/dist/ 
-adminside/.git
 socket-server/.env.local
 socket-server/node_modules/
 socket-server/.env
-socket-server/.git

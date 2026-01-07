@@ -3,10 +3,10 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
+    const { id } = params;
 
     if (!id) {
       return NextResponse.json(
@@ -17,16 +17,30 @@ export async function GET(
 
     const supabaseAdmin = getSupabaseAdmin();
 
-    // Check if it's a UUID (saved company) or company number (external search)
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const isUUID =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+    // rest of your code stays exactly the same
 
     if (isUUID) {
       // Fetch from database by UUID
       const { data: company, error } = await supabaseAdmin
-        .from('companies')
-        .select('*')
-        .eq('id', id)
-        .single();
+  .from('companies')
+  .select('*')
+  .eq('id', id)
+  .single<{
+    id: string
+    company_number: string
+    company_name: string
+    company_status: string
+    company_type: string
+    date_of_creation: string
+    confirmation_statement_due: string
+    accounts_due: string
+    registered_office_address: any
+    sic_codes: string[]
+    is_favorite: boolean
+  }>();
 
       if (error) {
         console.error('Error fetching company from database:', error);
