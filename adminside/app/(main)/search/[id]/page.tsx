@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import SearchDetailHeader from "@/components/search/detail/detail-header";
 import CompanyInfoSection from "@/components/search/detail/company-info-section";
 import Services from "@/components/search/detail/services";
+import ServiceSummary from "@/components/search/detail/service-summary";
+import { toast } from "react-toastify";
 
 type CompanyData = {
   id: string;
@@ -19,6 +21,16 @@ type CompanyData = {
   sic_codes?: string[];
 };
 
+type Service = {
+  title: string;
+  subtitle?: string;
+  description?: string;
+  dueIn?: string;
+  bulletPoints?: string[];
+  price?: number;
+  isViewPlans?: boolean;
+};
+
 export default function CompanyDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -27,6 +39,7 @@ export default function CompanyDetailPage() {
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedServices, setSelectedServices] = useState<Service[]>([]);
 
   useEffect(() => {
     const fetchCompanyDetails = async () => {
@@ -96,6 +109,25 @@ export default function CompanyDetailPage() {
     } catch {
       return '';
     }
+  };
+
+  const handleServiceToggle = (service: Service) => {
+    const isCurrentlySelected = selectedServices.some(s => s.title === service.title);
+
+    if (isCurrentlySelected) {
+      // Remove service
+      setSelectedServices(prev => prev.filter(s => s.title !== service.title));
+      toast.info(`${service.title} removed from selection`);
+    } else {
+      // Add service
+      setSelectedServices(prev => [...prev, service]);
+      toast.success(`${service.title} added to selection`);
+    }
+  };
+
+  const handleRemoveService = (serviceTitle: string) => {
+    setSelectedServices(prev => prev.filter(s => s.title !== serviceTitle));
+    toast.info(`Service removed from selection`);
   };
 
   const services = [
@@ -247,17 +279,34 @@ export default function CompanyDetailPage() {
   }
 
   return (
-    <div className="h-full flex flex-col gap-6">
-      <div className="flex-shrink-0">
-        <SearchDetailHeader title={companyData.company_name} />
-      </div>
+    <div className="h-full overflow-y-auto custom-scrollbar">
+      <div className="pb-6">
+        <div className="mb-6">
+          <SearchDetailHeader title={companyData.company_name} />
+          <CompanyInfoSection company={companyData} />
+        </div>
 
-      <div className="flex-shrink-0">
-        <CompanyInfoSection company={companyData} />
-      </div>
+        <div className="flex gap-6 items-start">
+          <div className="flex-1">
+            <Services
+              services={services}
+              company={companyData}
+              companyId={companyId}
+              selectedServices={selectedServices}
+              onServiceToggle={handleServiceToggle}
+            />
+          </div>
 
-      <div className="flex-1 min-h-0">
-        <Services services={services} company={companyData} companyId={companyId} />
+          <div className="w-80 flex-shrink-0">
+            <div className="sticky top-6">
+              <ServiceSummary
+                services={selectedServices}
+                company={companyData}
+                onRemove={handleRemoveService}
+              />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

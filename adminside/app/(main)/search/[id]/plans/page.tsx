@@ -145,7 +145,7 @@ export default function AccountingPlansPage() {
   ];
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col  overflow-y-auto custom-scrollbar pr-2">
       {/* Header */}
       <div className="flex-shrink-0 mb-6">
         <button
@@ -157,7 +157,7 @@ export default function AccountingPlansPage() {
         </button>
 
         <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2" >
             Accounting Packages
           </h1>
           <p className="text-sm text-gray-600">
@@ -167,7 +167,7 @@ export default function AccountingPlansPage() {
       </div>
 
       {/* Plans Grid - Scrollable */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
+      <div className="flex-1 ">
         <div className="grid md:grid-cols-2 gap-6 pb-6">
           {plans.map((plan, index) => {
             const Icon = plan.icon;
@@ -247,11 +247,11 @@ export default function AccountingPlansPage() {
                   <button
                     onClick={() => handleDownloadPDF(plan)}
                     disabled={isDownloading}
-                    className="flex-1 py-2.5 px-4 rounded-lg font-medium transition bg-gray-100 text-gray-900 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+                    className="flex-1 py-2.5 px-4 text-white rounded-lg font-medium transition bg-primary hover:bg-gray-100 hover:text-black disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
                   >
                     {isDownloading ? (
                       <>
-                        <div className="w-4 h-4 border-2 border-gray-700 border-t-transparent rounded-full animate-spin"></div>
+                        <div className="w-4 h-4 border-2 border-gray-900 border-t-transparent rounded-full animate-spin"></div>
                         <span className="text-sm">Generating...</span>
                       </>
                     ) : (
@@ -261,15 +261,7 @@ export default function AccountingPlansPage() {
                       </>
                     )}
                   </button>
-                  <button
-                    className={`flex-1 py-2.5 px-4 rounded-lg font-medium transition ${
-                      plan.popular
-                        ? "bg-teal-700 text-white hover:bg-teal-800"
-                        : "bg-primary text-white hover:opacity-90"
-                    }`}
-                  >
-                    Select Plan
-                  </button>
+                  
                 </div>
               </div>
             );

@@ -50,6 +50,45 @@ export async function GET(
         );
       }
 
+      // Fetch fresh data from Companies House to get full nested structure
+      const apiKey = process.env.COMPANIES_HOUSE_API_KEY;
+
+      if (apiKey) {
+        try {
+          const profileUrl = `https://api.company-information.service.gov.uk/company/${company.company_number}`;
+          const response = await fetch(profileUrl, {
+            headers: {
+              'Authorization': `Basic ${Buffer.from(apiKey + ':').toString('base64')}`,
+            },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            return NextResponse.json({
+              company: {
+                id: company.id,
+                company_number: company.company_number,
+                company_name: data.company_name,
+                company_status: data.company_status,
+                company_type: data.type,
+                date_of_creation: data.date_of_creation,
+                confirmation_statement_due: data.confirmation_statement?.next_due,
+                accounts_due: data.accounts?.next_due,
+                confirmation_statement: data.confirmation_statement,
+                accounts: data.accounts,
+                registered_office_address: data.registered_office_address,
+                sic_codes: data.sic_codes,
+                is_favorite: company.is_favorite,
+              },
+              source: 'database_with_fresh_data'
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching fresh data from Companies House:', error);
+        }
+      }
+
+      // Fallback to database data if Companies House fetch fails
       return NextResponse.json({
         company: {
           id: company.id,
@@ -60,6 +99,12 @@ export async function GET(
           date_of_creation: company.date_of_creation,
           confirmation_statement_due: company.confirmation_statement_due,
           accounts_due: company.accounts_due,
+          confirmation_statement: company.confirmation_statement_due ? {
+            next_due: company.confirmation_statement_due
+          } : undefined,
+          accounts: company.accounts_due ? {
+            next_due: company.accounts_due
+          } : undefined,
           registered_office_address: company.registered_office_address,
           sic_codes: company.sic_codes,
           is_favorite: company.is_favorite,
@@ -110,6 +155,8 @@ export async function GET(
           date_of_creation: data.date_of_creation,
           confirmation_statement_due: data.confirmation_statement?.next_due,
           accounts_due: data.accounts?.next_due,
+          confirmation_statement: data.confirmation_statement,
+          accounts: data.accounts,
           registered_office_address: data.registered_office_address,
           sic_codes: data.sic_codes,
         },
