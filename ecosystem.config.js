@@ -7,11 +7,11 @@ module.exports = {
       args: 'start',
       env: {
         NODE_ENV: 'production',
-        PORT: 3000,
+        PORT: 3001,
       },
       env_development: {
         NODE_ENV: 'development',
-        PORT: 3000,
+        PORT: 3001,
       },
       instances: 1,
       exec_mode: 'fork',
@@ -29,11 +29,11 @@ module.exports = {
       args: 'start',
       env: {
         NODE_ENV: 'production',
-        PORT: 3001,
+        PORT: 3000,
       },
       env_development: {
         NODE_ENV: 'development',
-        PORT: 3001,
+        PORT: 3000,
       },
       instances: 1,
       exec_mode: 'fork',
