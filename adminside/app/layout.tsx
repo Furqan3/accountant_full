@@ -12,6 +12,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Admin Dashboard - Accountent",
   description: "Admin dashboard for managing accounting services",
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
