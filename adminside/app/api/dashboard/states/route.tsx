@@ -1,13 +1,20 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 
+interface Order {
+  id: string;
+  amount: number;
+  status: string;
+  payment_status: string;
+}
+
 export async function GET() {
   try {
     // Fetch all orders from Supabase using admin client to bypass RLS
     const supabaseAdmin = getSupabaseAdmin();
     const { data: orders, error } = await supabaseAdmin
       .from('orders')
-      .select('id, amount, status, payment_status');
+      .select('id, amount, status, payment_status') as { data: Order[] | null; error: any };
 
     if (error) {
       console.error('❌ Error fetching orders for stats:', error);
@@ -61,7 +68,7 @@ export async function GET() {
     let totalSales = 0;
     let salesCount = 0;
 
-    orders?.forEach((order: any) => {
+    orders?.forEach((order) => {
       // Count as sale if payment_status is 'paid' OR if status is 'completed'
       if (order.payment_status === 'paid' || order.status === 'completed') {
         totalSales += (order.amount / 100); // Convert from cents

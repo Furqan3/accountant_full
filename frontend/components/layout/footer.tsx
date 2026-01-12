@@ -15,7 +15,6 @@ const Footer: React.FC = () => {
 
           {/* Main page links aligned middle */}
           <div className="mt-8 md:mt-0">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Main page</h3>
             <ul className="space-y-3">
               <li>
                 <a href="/" className="text-gray-600 hover:text-gray-900 transition">
@@ -75,7 +74,7 @@ const Footer: React.FC = () => {
             </div>
 
             {/* Social icons */}
-            <div>
+            {/* <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Follow Us</h3>
               <div className="flex gap-4">
                 <a
@@ -115,7 +114,7 @@ const Footer: React.FC = () => {
                   </svg>
                 </a>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

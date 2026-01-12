@@ -41,45 +41,49 @@ const handleRedirect = () => {
           </div>
 
           {/* HERO CONTENT */}
-          <div className="pb-68 flex flex-col lg:flex-row justify-between items-start relative">
+          <div className="pb-45 flex flex-col lg:flex-row justify-between items relative">
             {/* TEXT - Now has more horizontal space */}
-            <div className="space-y-6 text-white max-w-4xl lg:max-w-2xl pt-20 lg:pt-32 pl-6 lg:pl-12 xl:pl-20">
-              <button
-                onClick={() => router.push('/about')}
-                className="bg-teal-800 hover:bg-teal-700 px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2"
-              >
-                Explore who we are
-                <FaArrowRight size={12} />
-              </button>
+            <div className="flex flex-col items-center justify-center text-center space-y-6 text-white max-w-3xl mx-auto pt-10 lg:pt-12 px-6">
+  
+  <button
+    onClick={() => router.push('/about')}
+    className="bg-teal-800 hover:bg-teal-700 px-5 py-2 rounded-full text-sm font-medium flex items-center gap-2"
+  >
+    Explore who we are
+    <FaArrowRight size={12} />
+  </button>
 
-              <h1 className="text-4xl lg:text-5xl xl:text-5xl font-bold leading-tight">
-                Fast & Secure Companies House Filing Services
-              </h1>
+  <h1 className="text-4xl lg:text-5xl xl:text-5xl font-bold leading-tight">
+    Fast & Secure Companies House Filing Services
+  </h1>
 
-              <p className="text-base lg:text-lg opacity-90">
-                File your confirmation statements, annual accounts, and company documents online in minutes.
-                Professional, reliable service trusted by thousands of UK directors.
-              </p>
+  <p className="text-base lg:text-lg opacity-90 max-w-2xl">
+    File your confirmation statements, annual accounts, and company documents online in minutes.
+    Professional, reliable service trusted by thousands of UK directors.
+  </p>
 
-              <div className="bg-white backdrop-blur rounded-lg p-1 flex gap-4 max-w-md">
-                <input
-                  type="text"
-                  placeholder="Search Company..."
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="flex-grow px-4 py-3 rounded-lg text-gray-800 focus:outline-none"
-                />
-                <button 
-                onClick={handleSearch}
-                className="bg-teal-700 hover:bg-teal-600 px-6 py-3 rounded-lg font-medium whitespace-nowrap">
-                  Search
-                </button>
-              </div>
-            </div>
+  <div className="bg-white backdrop-blur rounded-lg p-1 flex flex-col sm:flex-row gap-3 w-full max-w-md">
+    <input
+      type="text"
+      placeholder="Search Company..."
+      onChange={(e) => setSearchTerm(e.target.value)}
+      className="flex-grow px-4 py-3 rounded-lg text-gray-800 focus:outline-none"
+    />
+    <button
+      onClick={handleSearch}
+      className="bg-teal-700 hover:bg-teal-600 px-6 py-3 rounded-lg font-medium whitespace-nowrap"
+    >
+      Search
+    </button>
+  </div>
+
+</div>
+
 
             {/* IMAGE - Absolutely positioned to the far right */}
-            <div className="relative lg:absolute lg:inset-y-0 lg:right-0 lg:w-auto lg:pointer-events-none">
+            {/* <div className="relative lg:absolute lg:inset-y-0 lg:right-0 lg:w-auto lg:pointer-events-none">
               <img src="hero.png" alt="Business" className="w-full max-w-lg lg:max-w-xl xl:max-w-2xl h-auto" />
-            </div>
+            </div> */}
           </div>
         </div>
       </section>
@@ -88,7 +92,7 @@ const handleRedirect = () => {
         <div className="max-w-7xl mx-auto lg:flex lg:items-center lg:gap-16">
           {/* LEFT IMAGE */}
           <div className="lg:w-1/2 mb-10 lg:mb-0">
-            <img src="get_in_touch.png" alt="Team and Stats" className="rounded-xl  w-full" />
+            <img src="git.png" alt="Team and Stats" className="rounded-xl  w-full" />
           </div>
 
           {/* RIGHT TEXT CONTENT */}
@@ -116,7 +120,7 @@ const handleRedirect = () => {
             </ul>
 
             {/* Stats */}
-            <div className="flex gap-10 text-gray-900 font-bold text-lg">
+            {/* <div className="flex gap-10 text-gray-900 font-bold text-lg">
               <div>
                 <span>20+</span>
                 <p className="font-normal text-gray-500">Years of Experience</p>
@@ -125,7 +129,7 @@ const handleRedirect = () => {
                 <span>8K</span>
                 <p className="font-normal text-gray-500">Happy Clients</p>
               </div>
-            </div>
+            </div> */}
 
             {/* Button */}
             <button
@@ -169,7 +173,7 @@ const handleRedirect = () => {
           <div className="max-w-7xl mx-auto px-6 pt-30">
             <div className="overflow-hidden rounded-lg ">
               <img
-                src="paper.png"
+                src="filerimage.png"
                 alt="Financial documents with magnifying glass, ruler, and pencils"
                 className="w-full h-auto object-cover"
               />
@@ -245,33 +249,12 @@ const handleRedirect = () => {
       </section>
 
       <section className="py-32 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col lg:flex-row items-center justify-between relative z-10">
-          {/* Left side: Faint overlay text */}
-          <div className="lg:w-1/2">
-            <p className="text-3xl md:text-4xl lg:text-4xl font-light text-black leading-tight">
-              We are a strategic partner to our clients. We will help you to ideate your product from conception to
-              iterative development support.
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-center relative z-10">
+          <div className="max-w-4xl text-center">
+            <p className="text-3xl md:text-4xl lg:text-5xl font-light text-black leading-tight">
+              Our dedicated team of compliance experts and technology specialists work together to simplify
+              your company filing experience, ensuring accuracy, speed, and peace of mind every step of the way.
             </p>
-          </div>
-
-          {/* Right side: Stats and button */}
-          <div className="lg:w-1/2 flex flex-col items-center lg:items-end text-center lg:text-right mt-16 lg:mt-0">
-            {/* Number */}
-            <h2 className="text-8xl md:text-9xl font-bold text-gray-300">20+</h2>
-
-            {/* Centered line */}
-            <div className="w-55 h-px bg-gray-800 my-4 mx-auto lg:mx-0" />
-
-            {/* Description */}
-            <p className="text-xl md:text-2xl text-gray-400 mb-8">Years of Experience</p>
-
-            {/* Button */}
-            <button
-              onClick={() => router.push('/about')}
-              className="bg-teal-600 hover:bg-teal-500 text-white px-8 py-4 rounded-full text-lg font-medium transition-colors"
-            >
-              More About Us
-            </button>
           </div>
         </div>
       </section>
@@ -310,7 +293,7 @@ const handleRedirect = () => {
                 <p className="text-gray-600 text-center mt-2 mb-8">Annual confirmation of company details</p>
 
                 <p className="text-4xl font-bold text-gray-900 text-center mb-10">
-                  $99 <span className="text-lg font-normal text-gray-600">USD/month</span>
+                  £65.99 <span className="text-lg font-normal text-gray-600">inclusive VAT</span>
                 </p>
                
                   <button 
@@ -360,7 +343,7 @@ const handleRedirect = () => {
                 <p className="text-teal-100 text-center mt-2 mb-8">File accounts for non-trading (dormant) companies</p>
 
                 <p className="text-4xl font-bold text-center mb-10">
-                  $199 <span className="text-lg font-normal opacity-90">USD/month</span>
+                  £79.99 <span className="text-lg font-normal opacity-90">inclusive VAT</span>
                 </p>
 
                 <button
@@ -413,7 +396,7 @@ const handleRedirect = () => {
                 <p className="text-gray-600 text-center mt-2 mb-8">Voluntary strike-off and close your company</p>
 
                 <p className="text-4xl font-bold text-gray-900 text-center mb-10">
-                  $299 <span className="text-lg font-normal text-gray-600">USD/month</span>
+                  £149.99 <span className="text-lg font-normal text-gray-600">inclusive VAT</span>
                 </p>
 
                 <button 
@@ -428,9 +411,7 @@ const handleRedirect = () => {
                 <div className="space-y-3">
                   <h4 className="font-semibold text-gray-900">Services Included:</h4>
                   <ul className="space-y-2">
-                    <li className="flex items-center gap-3 text-gray-700">
-                      <span className="text-teal-600"><SquareCheckBig className="w-5 h-5" /></span> Complete DS01 form
-                    </li>
+                    
                     <li className="flex items-center gap-3 text-gray-700">
                       <span className="text-teal-600"><SquareCheckBig className="w-5 h-5" /></span> Director notification letters
                     </li>

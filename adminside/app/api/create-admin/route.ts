@@ -54,7 +54,7 @@ export async function POST() {
           messages: true,
           search: true
         }
-      })
+      } as any)
       .select()
       .single();
 

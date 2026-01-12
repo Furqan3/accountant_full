@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 
+interface OrderData {
+  id: string;
+  user_id: string;
+}
+
+interface AdminUserData {
+  user_id: string;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { orderId, messageText, attachments } = await request.json();
@@ -26,7 +35,7 @@ export async function POST(request: NextRequest) {
       .from('orders')
       .select('id, user_id')
       .eq('id', orderId)
-      .single();
+      .single() as { data: OrderData | null; error: any };
 
     if (orderError || !order) {
       return NextResponse.json(
@@ -44,7 +53,7 @@ export async function POST(request: NextRequest) {
         .from('admin_users')
         .select('user_id')
         .limit(1)
-        .single();
+        .single() as { data: AdminUserData | null; error: any };
 
       if (adminError || !adminUsers) {
         return NextResponse.json({
@@ -67,7 +76,7 @@ export async function POST(request: NextRequest) {
         attachments: attachments || [],
         read_by_user: false,
         read_by_admin: true,
-      })
+      } as any)
       .select('*')
       .single();
 

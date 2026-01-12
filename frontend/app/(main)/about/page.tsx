@@ -59,13 +59,13 @@ export default function AboutPage() {
                 Your Trusted Accounting Partner
               </h2>
               <p className="text-gray-600 mb-4 leading-relaxed">
-                For over two decades, we've been helping businesses navigate the complexities
+               We've been helping businesses navigate the complexities
                 of financial management and regulatory compliance. Our mission is to provide
                 comprehensive accounting solutions that empower businesses to focus on what
                 they do best.
               </p>
               <p className="text-gray-600 mb-4 leading-relaxed">
-                From company formation to annual returns, tax filing to financial reporting,
+                From annual returns, tax filing to financial reporting,
                 we offer a full suite of services designed to meet the needs of businesses at
                 every stage of their journey.
               </p>
@@ -94,15 +94,7 @@ export default function AboutPage() {
                     <p className="text-sm text-gray-600">Happy Clients</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="bg-teal-700 text-white p-3 rounded-lg">
-                    <Award className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Certified</h3>
-                    <p className="text-sm text-gray-600">Chartered Accountants</p>
-                  </div>
-                </div>
+               
               </div>
             </div>
           </div>
@@ -143,7 +135,7 @@ export default function AboutPage() {
         </section>
 
         {/* Team Section */}
-        <section className="max-w-6xl mx-auto px-4 py-16">
+        {/* <section className="max-w-6xl mx-auto px-4 py-16">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Meet Our Team</h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
@@ -173,7 +165,7 @@ export default function AboutPage() {
               </div>
             ))}
           </div>
-        </section>
+        </section> */}
 
         {/* CTA Section */}
         <section className="bg-teal-700 py-16">

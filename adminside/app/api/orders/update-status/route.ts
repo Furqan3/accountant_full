@@ -1,6 +1,24 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 
+interface OrderUpdateData {
+  status: string;
+  updated_at: string;
+  completed_at?: string | null;
+  payment_status?: string;
+}
+
+interface OrderRecord {
+  id: string;
+  status: string;
+  updated_at: string;
+  completed_at?: string | null;
+  payment_status?: string;
+  amount?: number;
+  user_id?: string;
+  service_name?: string;
+}
+
 export async function PATCH(request: Request) {
   try {
     const { orderId, status } = await request.json();
@@ -22,7 +40,7 @@ export async function PATCH(request: Request) {
     const supabaseAdmin = getSupabaseAdmin();
 
     // Prepare update data
-    const updateData: any = {
+    const updateData: OrderUpdateData = {
       status,
       updated_at: new Date().toISOString()
     };
@@ -39,12 +57,12 @@ export async function PATCH(request: Request) {
     }
 
     // Update the order status
-    const { data, error } = await supabaseAdmin
-      .from('orders')
+    const { data, error } = await (supabaseAdmin
+      .from('orders') as any)
       .update(updateData)
       .eq('id', orderId)
       .select()
-      .single();
+      .single() as { data: OrderRecord | null; error: any };
 
     if (error) {
       console.error('Error updating order status:', error);

@@ -3,116 +3,150 @@ import { Document, Page, Text, View, Image, StyleSheet } from '@react-pdf/render
 import { Company } from '@/contexts/bulk-selection-context';
 import { Service } from './service-selector';
 
-// Define styles for PDF
+// Define styles for PDF matching FilingHub format
 const styles = StyleSheet.create({
   page: {
     padding: 40,
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: 'Helvetica',
+    backgroundColor: '#ffffff',
   },
+  // Header with logo
   header: {
+    marginBottom: 25,
+  },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  logo: {
+    width: 80,
+    height: 60,
+    marginRight: 10,
+  },
+  brandName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  tagline: {
+    fontSize: 10,
+    color: '#333',
     marginBottom: 20,
-    borderBottom: '2 solid #1e40af',
-    paddingBottom: 10,
+  },
+  // Private & Confidential section
+  confidential: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    color: '#000',
+  },
+  // Subject section
+  subject: {
+    fontSize: 10,
+    marginBottom: 15,
+    color: '#000',
+  },
+  subjectLabel: {
+    fontWeight: 'bold',
+  },
+  // Body text
+  bodyText: {
+    fontSize: 10,
+    lineHeight: 1.5,
+    marginBottom: 12,
+    color: '#000',
+    textAlign: 'justify',
+  },
+  // Company details section
+  companyDetailsSection: {
+    marginBottom: 15,
+    padding: 10,
+    backgroundColor: '#f9fafb',
+    borderRadius: 4,
+    border: '1 solid #e5e7eb',
   },
   companyName: {
-    fontSize: 24,
+    fontSize: 12,
     fontWeight: 'bold',
     color: '#1e40af',
     marginBottom: 5,
   },
-  companyNumber: {
-    fontSize: 12,
+  companyDetail: {
+    fontSize: 9,
     color: '#666',
+    marginBottom: 3,
   },
-  section: {
-    marginTop: 20,
+  // QR Code section
+  actionText: {
+    fontSize: 10,
+    marginTop: 15,
     marginBottom: 15,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#1e40af',
-    marginBottom: 10,
-    borderBottom: '1 solid #e5e7eb',
-    paddingBottom: 5,
-  },
-  row: {
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  label: {
-    width: '40%',
-    fontSize: 10,
-    color: '#666',
-    fontWeight: 'bold',
-  },
-  value: {
-    width: '60%',
-    fontSize: 10,
     color: '#000',
   },
-  servicesGrid: {
-    marginTop: 10,
-  },
-  serviceItem: {
+  qrTable: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-    padding: 8,
-    backgroundColor: '#f3f4f6',
-    borderRadius: 4,
+    border: '1 solid #000',
+    marginBottom: 20,
   },
-  serviceBullet: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#1e40af',
-    marginRight: 8,
-  },
-  serviceText: {
-    fontSize: 10,
+  qrColumn: {
     flex: 1,
-  },
-  servicePrice: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#1e40af',
-  },
-  qrSection: {
-    marginTop: 25,
-  },
-  qrGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-around',
-    marginTop: 15,
-  },
-  qrItem: {
+    borderRight: '1 solid #000',
+    padding: 15,
     alignItems: 'center',
-    marginBottom: 15,
-    width: '30%',
+    justifyContent: 'center',
+  },
+  qrColumnLast: {
+    flex: 1,
+    padding: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  qrCodeLabel: {
+    fontSize: 9,
+    marginBottom: 10,
+    textAlign: 'center',
+    color: '#000',
   },
   qrCode: {
-    width: 120,
-    height: 120,
-    marginBottom: 8,
+    width: 100,
+    height: 100,
+    marginBottom: 10,
   },
-  qrLabel: {
-    fontSize: 9,
+  qrOptionTitle: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    marginBottom: 5,
     textAlign: 'center',
-    color: '#666',
+    color: '#000',
   },
-  footer: {
+  qrOptionDesc: {
+    fontSize: 8,
+    textAlign: 'center',
+    color: '#333',
+    lineHeight: 1.4,
+  },
+  // Website text
+  websiteText: {
+    fontSize: 10,
+    marginBottom: 25,
+    color: '#000',
+  },
+  websiteLink: {
+    fontWeight: 'bold',
+    textDecoration: 'underline',
+  },
+  // Footer disclaimer
+  disclaimer: {
     position: 'absolute',
     bottom: 30,
     left: 40,
     right: 40,
-    textAlign: 'center',
     fontSize: 8,
     color: '#999',
-    borderTop: '1 solid #e5e7eb',
-    paddingTop: 10,
+    textAlign: 'justify',
+    lineHeight: 1.3,
   },
 });
 
@@ -144,78 +178,110 @@ const CompanyPDFDocument: React.FC<CompanyPDFDocumentProps> = ({
     return `£${price.toFixed(2)}`;
   };
 
+  // Get website URL from environment or use default
+  const websiteUrl = process.env.NEXT_PUBLIC_FRONTEND_URL?.replace(/^https?:\/\//, '') || 'www.filinghub.co.uk';
+
+  // Determine subject line based on services or company status
+  const getSubjectLine = () => {
+    if (services.some(s => s.title.toLowerCase().includes('confirmation statement'))) {
+      return 'Confirmation Statement – Filing Due Soon';
+    } else if (services.some(s => s.title.toLowerCase().includes('accounts'))) {
+      return 'Annual Accounts – Filing Due Soon';
+    } else {
+      return 'Company Filing Services Available';
+    }
+  };
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Header */}
+        {/* Header with Logo */}
         <View style={styles.header}>
+          <View style={styles.logoContainer}>
+            <Image
+              src="/logo.png"
+              style={styles.logo}
+            />
+          </View>
+          <Text style={styles.tagline}>Online company filing & compliance services</Text>
+        </View>
+
+        {/* Private & Confidential */}
+        <Text style={styles.confidential}>Private & Confidential</Text>
+
+        {/* Subject Line */}
+        <Text style={styles.subject}>
+          <Text style={styles.subjectLabel}>Subject: </Text>
+          {getSubjectLine()}
+        </Text>
+
+        {/* Body Text - First Paragraph */}
+        <Text style={styles.bodyText}>
+          This notice is to remind you that the annual confirmation statement for your company is approaching its statutory filing deadline with Companies House.
+        </Text>
+
+        {/* Company Details Box */}
+        <View style={styles.companyDetailsSection}>
           <Text style={styles.companyName}>{company.company_name}</Text>
-          <Text style={styles.companyNumber}>
-            Company Number: {company.company_number}
-          </Text>
-        </View>
-
-        {/* Company Details Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Company Details</Text>
-
-          <View style={styles.row}>
-            <Text style={styles.label}>Status:</Text>
-            <Text style={styles.value}>{company.company_status || 'Not available'}</Text>
-          </View>
-
-          {company.company_type && (
-            <View style={styles.row}>
-              <Text style={styles.label}>Type:</Text>
-              <Text style={styles.value}>{company.company_type}</Text>
-            </View>
+          <Text style={styles.companyDetail}>Company Number: {company.company_number}</Text>
+          <Text style={styles.companyDetail}>Status: {company.company_status || 'Active'}</Text>
+          {company.confirmation_statement_due && (
+            <Text style={styles.companyDetail}>
+              Confirmation Statement Due: {formatDate(company.confirmation_statement_due)}
+            </Text>
           )}
-
-          <View style={styles.row}>
-            <Text style={styles.label}>Confirmation Statement Due:</Text>
-            <Text style={styles.value}>
-              {formatDate(company.confirmation_statement_due)}
+          {company.accounts_due && (
+            <Text style={styles.companyDetail}>
+              Accounts Due: {formatDate(company.accounts_due)}
             </Text>
-          </View>
-
-          <View style={styles.row}>
-            <Text style={styles.label}>Accounts Due:</Text>
-            <Text style={styles.value}>
-              {formatDate(company.accounts_due)}
-            </Text>
-          </View>
+          )}
         </View>
 
-        {/* Selected Services Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Selected Services</Text>
-          <View style={styles.servicesGrid}>
-            {services.map((service, index) => (
-              <View key={index} style={styles.serviceItem}>
-                <View style={styles.serviceBullet} />
-                <Text style={styles.serviceText}>{service.title}</Text>
-                <Text style={styles.servicePrice}>{formatPrice(service.base_price)}</Text>
+        {/* Body Text - Second Paragraph */}
+        <Text style={styles.bodyText}>
+          All UK companies, including dormant and non-trading entities, must confirm their registered details annually. Late or missed filings may result in penalties or enforcement action.
+        </Text>
+
+        {/* Body Text - Third Paragraph */}
+        <Text style={styles.bodyText}>
+          If you have already filed directly with Companies House or instructed an accountant to do so, please disregard this letter. Public records may take up to two working days to update.
+        </Text>
+
+        {/* Action Text */}
+        <Text style={styles.actionText}>
+          To take action now, please choose one of the options below:
+        </Text>
+
+        {/* QR Codes Table */}
+        <View style={styles.qrTable}>
+          {services.slice(0, 3).map((service, index) => {
+            const isLast = index === services.slice(0, 3).length - 1;
+            return (
+              <View key={index} style={isLast ? styles.qrColumnLast : styles.qrColumn}>
+                <Text style={styles.qrCodeLabel}>QR CODE</Text>
+                <Text style={styles.qrCodeLabel}>(Option {String.fromCharCode(65 + index)})</Text>
+
+                {qrCodes[index] && (
+                  <Image src={qrCodes[index]} style={styles.qrCode} />
+                )}
+
+                <Text style={styles.qrOptionTitle}>Option {String.fromCharCode(65 + index)}</Text>
+                <Text style={styles.qrOptionDesc}>{service.title}</Text>
+                <Text style={styles.qrOptionDesc}>{formatPrice(service.base_price)}</Text>
               </View>
-            ))}
-          </View>
+            );
+          })}
         </View>
 
-        {/* QR Codes Section */}
-        <View style={styles.qrSection}>
-          <Text style={styles.sectionTitle}>Scan QR Code to Pay for Service</Text>
-          <View style={styles.qrGrid}>
-            {qrCodes.map((qrCode, index) => (
-              <View key={index} style={styles.qrItem}>
-                <Image src={qrCode} style={styles.qrCode} />
-                <Text style={styles.qrLabel}>{services[index]?.title}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
+        {/* Website Text */}
+        <Text style={styles.websiteText}>
+          You may also proceed directly by visiting{' '}
+          <Text style={styles.websiteLink}>{websiteUrl}</Text>.
+        </Text>
 
-        {/* Footer */}
-        <Text style={styles.footer}>
-          Generated on {new Date().toLocaleDateString('en-GB')} | Scan QR codes to process payments
+        {/* Footer Disclaimer */}
+        <Text style={styles.disclaimer}>
+          FilingHub Ltd is an independent software provider offering electronic company filing services. We are not affiliated with Companies House or HMRC.
         </Text>
       </Page>
     </Document>

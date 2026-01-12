@@ -5,12 +5,16 @@ import { useState } from "react"
 import CompanyCard from "./company-card"
 import { Loader2 } from "lucide-react"
 
+
+
 interface Company {
   id: string
   name: string
   logo: string
   confirmationStatementDue: string
   accountsDue: string
+  companyStatus: string
+
 }
 
 interface SearchResultsProps {
@@ -53,6 +57,8 @@ const SearchResults: React.FC<SearchResultsProps> = ({ searchTerm, companies }) 
               name={company.name}
               confirmationStatementDue={company.confirmationStatementDue}
               accountsDue={company.accountsDue}
+              status={company.companyStatus}
+
             />
           ))}
         </div>

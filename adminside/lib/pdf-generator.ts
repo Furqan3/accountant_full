@@ -43,7 +43,7 @@ export async function generateCompanyPDF(
     });
 
     // Convert to blob
-    const blob = await pdf(doc).toBlob();
+    const blob = await pdf(doc as any).toBlob();
 
     return blob;
   } catch (error) {

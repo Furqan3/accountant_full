@@ -1,63 +1,120 @@
-import type React from "react"
-import { useState } from "react"
-import { ChevronDown, ChevronUp } from "lucide-react"
-import { getTimeRemaining, formatDate, calculateCorporationTaxDue } from "@/lib/date-utils"
+"use client";
 
-interface CompanyInfoCardsProps {
-  company: any
+import { useState } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
+
+interface CompanyInfoSectionProps {
+  company: any;
 }
 
-const CompanyInfoCards: React.FC<CompanyInfoCardsProps> = ({ company }) => {
-  const [showMore, setShowMore] = useState(false)
-
-  // Get company type display name
-  const getCompanyType = (type: string) => {
-    const types: { [key: string]: string } = {
-      'ltd': 'Private limited company',
-      'plc': 'Public limited company',
-      'llp': 'Limited liability partnership',
-      'private-limited-guarant-nsc': 'Private company limited by guarantee',
-      'private-unlimited': 'Private unlimited company',
-    }
-    return types[type] || type
+// Helper functions
+const formatDate = (dateString?: string) => {
+  if (!dateString) return null;
+  try {
+    const date = new Date(dateString);
+    const day = date.getDate();
+    const month = date.toLocaleDateString('en-GB', { month: 'long' });
+    const year = date.getFullYear();
+    return `${day} ${month} ${year}`;
+  } catch {
+    return dateString;
   }
+};
 
-  // Get status color
-  const getStatusColor = (status: string) => {
-    const statusLower = status.toLowerCase()
-    if (['active'].includes(statusLower)) {
-      return 'bg-green-100 text-green-700'
-    } else if (['dissolved', 'liquidation', 'receivership', 'administration', 'insolvency-proceedings', 'removed', 'closed', 'converted-closed'].includes(statusLower)) {
-      return 'bg-red-100 text-red-700'
-    } else if (statusLower === 'voluntary-arrangement') {
-      return 'bg-yellow-100 text-yellow-700'
-    }
-    return 'bg-gray-100 text-gray-700'
-  }
+const getTimeRemaining = (dateString?: string) => {
+  if (!dateString) return '';
+  try {
+    const targetDate = new Date(dateString);
+    const now = new Date();
+    const diffTime = targetDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-  // Get SIC code description
-  const getSICDescription = (code: string) => {
-    const sicCodes: { [key: string]: string } = {
-      '99999': 'Dormant Company',
-      '56210': 'Event catering activities',
-      '56101': 'Licensed restaurants',
-      '56302': 'Public houses and bars',
-    }
-    return sicCodes[code] || `SIC Code: ${code}`
+    if (diffDays < 0) return 'Overdue';
+    if (diffDays === 0) return 'Due today';
+    if (diffDays === 1) return 'Due in 1 day';
+    if (diffDays < 30) return `Due in ${diffDays} days`;
+
+    const months = Math.floor(diffDays / 30);
+    if (months === 1) return 'Due in 1 month';
+    if (months < 12) return `Due in ${months} months`;
+
+    const years = Math.floor(months / 12);
+    return years === 1 ? 'Due in 1 year' : `Due in ${years} years`;
+  } catch {
+    return '';
   }
+};
+
+const calculateCorporationTaxDue = (accountingRefDate: any) => {
+  if (!accountingRefDate) return null;
+  try {
+    const { day, month } = accountingRefDate;
+    const year = new Date().getFullYear();
+    const yearEnd = new Date(year, parseInt(month) - 1, parseInt(day));
+    const taxDue = new Date(yearEnd);
+    taxDue.setMonth(taxDue.getMonth() + 9);
+    return taxDue.toISOString();
+  } catch {
+    return null;
+  }
+};
+
+const getMonthName = (month: string): string => {
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  return months[parseInt(month) - 1] || '';
+};
+
+const getCompanyType = (type: string) => {
+  const types: { [key: string]: string } = {
+    'ltd': 'Private limited company',
+    'plc': 'Public limited company',
+    'llp': 'Limited liability partnership',
+    'private-limited-guarant-nsc': 'Private company limited by guarantee',
+    'private-unlimited': 'Private unlimited company',
+  };
+  return types[type] || type;
+};
+
+const getStatusColor = (status: string) => {
+  const statusLower = status.toLowerCase();
+  if (['active'].includes(statusLower)) {
+    return 'bg-green-100 text-green-700';
+  } else if (['dissolved', 'liquidation', 'receivership', 'administration', 'insolvency-proceedings', 'removed', 'closed', 'converted-closed'].includes(statusLower)) {
+    return 'bg-red-100 text-red-700';
+  } else if (statusLower === 'voluntary-arrangement') {
+    return 'bg-yellow-100 text-yellow-700';
+  }
+  return 'bg-gray-100 text-gray-700';
+};
+
+const getSICDescription = (code: string) => {
+  const sicCodes: { [key: string]: string } = {
+    '99999': 'Dormant Company',
+    '56210': 'Event catering activities',
+    '56101': 'Licensed restaurants',
+    '56302': 'Public houses and bars',
+  };
+  return sicCodes[code] || `SIC Code: ${code}`;
+};
+
+export default function CompanyInfoSection({ company }: CompanyInfoSectionProps) {
+  const [showMore, setShowMore] = useState(false);
 
   // Calculate year end
   const yearEndDate = company.accounts?.accounting_reference_date
     ? `${company.accounts.accounting_reference_date.day} ${getMonthName(company.accounts.accounting_reference_date.month)} ${new Date().getFullYear()}`
-    : null
+    : null;
 
   // Get corporation tax due date
   const corpTaxDue = company.accounts?.accounting_reference_date
     ? calculateCorporationTaxDue(company.accounts.accounting_reference_date)
-    : null
+    : null;
 
   return (
-    <div className="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
+    <div className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm">
       {/* Key dates - always visible */}
       <div className="space-y-3 text-base mb-4">
         {company.accounts?.accounting_reference_date && company.accounts?.next_accounts?.period_end_on && (
@@ -120,7 +177,7 @@ const CompanyInfoCards: React.FC<CompanyInfoCardsProps> = ({ company }) => {
 
         <div className="flex flex-wrap gap-2">
           <span className="text-gray-700">Company Type:</span>
-          <span className="text-gray-900"><strong>{getCompanyType(company.type)}</strong></span>
+          <span className="text-gray-900"><strong>{getCompanyType(company.type || company.company_type)}</strong></span>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -175,16 +232,5 @@ const CompanyInfoCards: React.FC<CompanyInfoCardsProps> = ({ company }) => {
         )}
       </button>
     </div>
-  )
+  );
 }
-
-// Helper function to get month name
-function getMonthName(month: string): string {
-  const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ]
-  return months[parseInt(month) - 1] || ''
-}
-
-export default CompanyInfoCards

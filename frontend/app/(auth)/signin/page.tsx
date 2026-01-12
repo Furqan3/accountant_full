@@ -23,20 +23,7 @@ export default function SignInPage() {
             File your confirmation statements, annual accounts, and company documents online in minutes. Professional,
             reliable service trusted by thousands of UK directors.
           </p>
-          <div className="flex justify-center gap-8 text-center">
-            <div>
-              <p className="text-4xl font-bold">20+</p>
-              <p className="text-sm opacity-80">Years Experience</p>
-            </div>
-            <div>
-              <p className="text-4xl font-bold">8K+</p>
-              <p className="text-sm opacity-80">Happy Clients</p>
-            </div>
-            <div>
-              <p className="text-4xl font-bold">100%</p>
-              <p className="text-sm opacity-80">Accuracy</p>
-            </div>
-          </div>
+          
         </div>
       </div>
     </div>

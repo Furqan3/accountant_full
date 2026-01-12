@@ -5,6 +5,8 @@ import Sidebar from "@/components/sidebar/sidebar";
 import Header from "@/components/header/header";
 import { useAuth } from "@/contexts/auth-context";
 import { BulkSelectionProvider } from "@/contexts/bulk-selection-context";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function MainLayout({
   children,
@@ -44,6 +46,17 @@ export default function MainLayout({
           </main>
         </div>
       </div>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </BulkSelectionProvider>
   );
 }

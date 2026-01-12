@@ -27,7 +27,7 @@ export async function GET(req: NextRequest, context: { params: Promise<Params> }
 
     const data = await response.json();
 
-    // Transform Companies House data to our format for /pay page
+  
     const company = {
       id: data.company_number || params.id,
       company_number: data.company_number,
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest, context: { params: Promise<Params> }
       date_of_creation: data.date_of_creation,
       confirmation_statement_due: data.confirmation_statement?.next_due || null,
       accounts_due: data.accounts?.next_due || null,
-      // For company/[id] page compatibility
+     
       confirmation_statement: data.confirmation_statement,
       accounts: data.accounts,
       registered_office_address: data.registered_office_address,

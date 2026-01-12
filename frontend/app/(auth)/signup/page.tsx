@@ -20,24 +20,7 @@ export default function SignUpPage() {
             Create your account today and experience hassle-free company filings. Our platform guides you through every
             step with confidence.
           </p>
-          <ul className="text-left space-y-4">
-            <li className="flex items-center gap-3">
-              <span className="w-6 h-6 bg-teal-500 rounded-full flex items-center justify-center text-sm">✓</span>
-              Filed within 24 hours
-            </li>
-            <li className="flex items-center gap-3">
-              <span className="w-6 h-6 bg-teal-500 rounded-full flex items-center justify-center text-sm">✓</span>
-              Companies House receipt included
-            </li>
-            <li className="flex items-center gap-3">
-              <span className="w-6 h-6 bg-teal-500 rounded-full flex items-center justify-center text-sm">✓</span>
-              100% accuracy guaranteed
-            </li>
-            <li className="flex items-center gap-3">
-              <span className="w-6 h-6 bg-teal-500 rounded-full flex items-center justify-center text-sm">✓</span>
-              Dedicated support team
-            </li>
-          </ul>
+          
         </div>
       </div>
     </div>

@@ -12,7 +12,7 @@ interface HeaderProps {
 export default function Header({ onMenuClick }: HeaderProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const router = useRouter();
-  const { adminUser, signOut } = useAuth();
+  const { user, signOut } = useAuth();
 
   const handleSignOut = async () => {
     await signOut();
@@ -45,16 +45,16 @@ export default function Header({ onMenuClick }: HeaderProps) {
         >
           {/* Profile Picture */}
           <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-semibold">
-            {getInitials(adminUser?.full_name || null)}
+            {getInitials(user?.user_metadata?.full_name || user?.email || null)}
           </div>
 
           {/* Profile Name */}
           <div className="text-left hidden md:block">
             <p className="text-sm font-medium text-gray-900">
-              {adminUser?.full_name || "Admin"}
+              {user?.user_metadata?.full_name || user?.email?.split('@')[0] || "Admin"}
             </p>
             <p className="text-xs text-gray-500 capitalize">
-              {adminUser?.role.replace("_", " ") || "Admin"}
+              Admin
             </p>
           </div>
 

@@ -29,11 +29,12 @@ export interface SendMessagePayload {
 export interface ServerToClientEvents {
   'new-message': (data: { orderId: string; message: Message }) => void
   'message-updated': (data: { orderId: string; message: Message }) => void
+  'dashboard-refresh': () => void
   error: (data: { message: string }) => void
 }
 
 export interface ClientToServerEvents {
   'join-order-room': (orderId: string) => void
   'leave-order-room': (orderId: string) => void
-  'send-message': (payload: SendMessagePayload) => void
+  'send-message': (payload: SendMessagePayload, callback: (ack: { success: boolean; error?: string }) => void) => void
 }

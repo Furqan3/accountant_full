@@ -1,7 +1,8 @@
 "use client"
 
 import React, { createContext, useContext, useEffect, useState, useRef } from "react"
-import { io, Socket } from "socket.io-client"
+import { io } from "socket.io-client"
+import type { Socket } from "socket.io-client"
 import { useAuth } from "./auth-context"
 import { supabase } from "@/lib/supabase"
 import type { ServerToClientEvents, ClientToServerEvents } from "@/types/socket"
@@ -113,7 +114,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!socket) return
 
-    const originalEmit = socket.emit.bind(socket)
+    const originalEmit = socket.emit.bind(socket) as any
 
     // @ts-ignore - Override emit to track room joins/leaves
     socket.emit = function (event: string, ...args: any[]) {
@@ -123,7 +124,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         joinedRoomsRef.current.delete(args[0])
       }
       return originalEmit(event, ...args)
-    }
+    } as any
   }, [socket])
 
   return (

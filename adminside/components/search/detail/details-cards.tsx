@@ -1,6 +1,9 @@
-import { Building, MapPin, Calendar, TriangleAlert } from "lucide-react";
+import { Building, MapPin, Calendar, TriangleAlert, Info } from "lucide-react";
 
 type DetailItem = {
+  companyStatus?: string;
+  companyType?: string;
+  companyNumber?: string;
   incorporateddate?: Date;
   address: string;
   confirmationdate?: Date;
@@ -8,6 +11,9 @@ type DetailItem = {
 };
 
 const ICON_MAP = {
+  companyStatus: Info,
+  companyType: Building,
+  companyNumber: Building,
   incorporateddate: Building,
   address: MapPin,
   confirmationdate: Calendar,
@@ -15,10 +21,13 @@ const ICON_MAP = {
 };
 
 const LABEL_MAP: Record<keyof DetailItem, string> = {
+  companyStatus: "Company Status",
+  companyType: "Company Type",
+  companyNumber: "Company Number",
   incorporateddate: "Incorporated Date",
-  address: "Address",
-  confirmationdate: "Confirmation Date",
-  accountduedate: "Account Due Date",
+  address: "Registered Address",
+  confirmationdate: "Confirmation Statement Due",
+  accountduedate: "Accounts Due Date",
 };
 
 // Helper function to format date as dd-MM-yyyy
@@ -30,6 +39,17 @@ function formatDate(date: Date | undefined): string {
   return `${day}-${month}-${year}`;
 }
 
+// Get status badge color
+function getStatusColor(status: string): string {
+  const lowerStatus = status.toLowerCase();
+  if (lowerStatus === 'active') return 'bg-green-100 text-green-800';
+  if (['dissolved', 'liquidation', 'receivership', 'administration', 'insolvency', 'removed', 'closed'].includes(lowerStatus)) {
+    return 'bg-red-100 text-red-800';
+  }
+  if (lowerStatus.includes('voluntary arrangement')) return 'bg-yellow-100 text-yellow-800';
+  return 'bg-gray-100 text-gray-800';
+}
+
 export default function DetailsCards({ data }: { data: DetailItem }) {
   return (
     <div className="w-full">
@@ -38,11 +58,16 @@ export default function DetailsCards({ data }: { data: DetailItem }) {
           const IconComponent = ICON_MAP[key];
           const value = data[key];
 
+          if (!value) return null;
+
           let displayValue = "";
+          let isStatus = false;
+
           if (value instanceof Date) {
             displayValue = formatDate(value);
           } else {
             displayValue = String(value);
+            isStatus = key === 'companyStatus';
           }
 
           return (
@@ -56,8 +81,14 @@ export default function DetailsCards({ data }: { data: DetailItem }) {
               </div>
               {/* Text */}
               <div>
-                <p className="text-l font-medium">{LABEL_MAP[key]}</p>
-                <p className="text-l font-bold overflow-wrap">{displayValue}</p>
+                <p className="text-sm font-medium text-gray-600">{LABEL_MAP[key]}</p>
+                {isStatus ? (
+                  <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(displayValue)}`}>
+                    {displayValue}
+                  </span>
+                ) : (
+                  <p className="text-sm font-bold text-gray-900 overflow-wrap break-words">{displayValue}</p>
+                )}
               </div>
             </div>
           );
