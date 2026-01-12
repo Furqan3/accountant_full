@@ -8,7 +8,7 @@ import { Server } from 'socket.io'
 import cors from 'cors'
 import { authenticateSocket } from './middleware/auth'
 import { registerMessageHandlers } from './handlers/messageHandlers'
-import { ServerToClientEvents, ClientToServerEvents, SocketData } from './types/socket'
+import { ServerToClientEvents, ClientToServerEvents, SocketData, Message } from './types/socket'
 import { supabase } from './config/supabase'
 
 const app = express()
@@ -69,7 +69,8 @@ const messageChannel = supabase
       table: 'messages',
     },
     (payload) => {
-      const { eventType, new: newMessage } = payload
+      const { eventType } = payload
+      const newMessage = payload.new as Message
       const orderId = newMessage.order_id
 
       if (eventType === 'INSERT') {

@@ -40,6 +40,7 @@ export interface SendMessagePayload {
 export interface ServerToClientEvents {
   'new-message': (data: { orderId: string; message: Message }) => void
   'message-updated': (data: { orderId: string; message: Message }) => void
+  'dashboard-refresh': () => void
   error: (data: { message: string }) => void
 }
 
