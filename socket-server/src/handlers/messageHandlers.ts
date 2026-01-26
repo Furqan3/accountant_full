@@ -1,6 +1,23 @@
 import { Server, Socket } from 'socket.io'
 import { supabase } from '../config/supabase'
 import { SocketData, SendMessagePayload } from '../types/socket'
+import { sendEmail, getNewMessageEmailContent } from '../utils/email'
+
+// Helper to format service type for display
+function formatServiceType(serviceType: string): string {
+  const serviceNames: { [key: string]: string } = {
+    'confirmation-statement': 'Confirmation Statement',
+    'annual-accounts': 'Annual Accounts',
+    'vat-return': 'VAT Return',
+    'corporation-tax': 'Corporation Tax',
+    'payroll': 'Payroll Services',
+    'bookkeeping': 'Bookkeeping',
+    'company-formation': 'Company Formation',
+    'registered-office': 'Registered Office',
+    'dormant-accounts': 'Dormant Accounts',
+  }
+  return serviceNames[serviceType] || serviceType?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Service'
+}
 
 export function registerMessageHandlers(io: Server, socket: Socket) {
   const socketData = socket.data as SocketData
@@ -147,6 +164,51 @@ export function registerMessageHandlers(io: Server, socket: Socket) {
 
       console.log(`📨 Message sent in order:${orderId} by ${fromAdminApp ? 'ADMINSIDE' : 'FRONTEND'} (user: ${userId})`)
       console.log(`📡 Broadcast to order room and admins room`)
+
+      // Send email notification to user when admin sends a message
+      if (fromAdminApp && messageText) {
+        try {
+          // Get order details and user info
+          const { data: orderDetails } = await supabase
+            .from('orders')
+            .select('user_id, service_type')
+            .eq('id', orderId)
+            .single()
+
+          if (orderDetails) {
+            // Get user profile for name
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('full_name')
+              .eq('id', orderDetails.user_id)
+              .single()
+
+            // Get user email from auth.users using admin API
+            const { data: authData } = await supabase.auth.admin.getUserById(orderDetails.user_id)
+            const userEmail = authData?.user?.email
+
+            if (userEmail) {
+              const emailContent = getNewMessageEmailContent({
+                userName: profile?.full_name || 'Customer',
+                orderNumber: orderId.slice(0, 8).toUpperCase(),
+                messagePreview: messageText,
+                serviceName: formatServiceType(orderDetails.service_type)
+              })
+
+              await sendEmail({
+                to: userEmail,
+                subject: emailContent.subject,
+                html: emailContent.html,
+                text: emailContent.text
+              })
+
+              console.log(`✉️ Email notification sent to ${userEmail} for new message`)
+            }
+          }
+        } catch (emailError) {
+          console.error('Error sending message notification email:', emailError)
+        }
+      }
     } catch (error: any) {
       console.error('Error sending message:', error.message)
       callback({ success: false, error: 'Failed to send message' })

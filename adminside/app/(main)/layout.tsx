@@ -41,7 +41,30 @@ export default function MainLayout({
         <div className="flex flex-col flex-1 overflow-hidden">
           <Header onMenuClick={toggleSidebar} />
 
-          <main className="flex-1 bg-gray-200 overflow-hidden p-6">
+          <main
+            className="flex-1 bg-gray-200 overflow-y-auto p-6"
+            style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#0d9488 #e5e7eb'
+            }}
+          >
+            <style jsx>{`
+              main::-webkit-scrollbar {
+                width: 12px;
+              }
+              main::-webkit-scrollbar-track {
+                background: #e5e7eb;
+                border-radius: 6px;
+              }
+              main::-webkit-scrollbar-thumb {
+                background: #0d9488;
+                border-radius: 6px;
+                border: 2px solid #e5e7eb;
+              }
+              main::-webkit-scrollbar-thumb:hover {
+                background: #0f766e;
+              }
+            `}</style>
             {children}
           </main>
         </div>

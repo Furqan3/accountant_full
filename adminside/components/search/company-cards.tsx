@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Building2, Hash, Square, CheckSquare } from "lucide-react";
+import { ChevronRight, Building2, Hash, Square, CheckSquare, MapPin, Calendar } from "lucide-react";
 import Link from "next/link";
 import { useBulkSelection } from "@/contexts/bulk-selection-context";
 
@@ -13,6 +13,17 @@ export type Company = {
   confirmation_statement_due?: string;
   accounts_due?: string;
   is_favorite?: boolean;
+  date_of_creation?: string;
+  date_of_cessation?: string;
+  sic_codes?: string[];
+  address?: {
+    address_line_1?: string;
+    address_line_2?: string;
+    locality?: string;
+    region?: string;
+    postal_code?: string;
+    country?: string;
+  };
 };
 
 export default function CompanyCard({ company }: { company: Company }) {
@@ -31,6 +42,18 @@ export default function CompanyCard({ company }: { company: Company }) {
       return dateString;
     }
   };
+
+  const formatAddress = () => {
+    if (!company.address) return null;
+    const parts = [
+      company.address.locality,
+      company.address.region,
+      company.address.postal_code
+    ].filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : null;
+  };
+
+  const addressDisplay = formatAddress();
 
   const handleToggleSelect = () => {
     if (selected) {
@@ -53,23 +76,45 @@ export default function CompanyCard({ company }: { company: Company }) {
               <h3 className="text-lg font-semibold text-primary">
                 {company.company_name}
               </h3>
-              <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">
+              <div className="flex items-center flex-wrap gap-x-1 gap-y-1 text-sm text-gray-600 mt-1">
                 <Hash className="h-3 w-3" />
                 <span>{company.company_number}</span>
                 {company.company_status && (
                   <>
-                    <span className="mx-2">•</span>
+                    <span className="mx-1">•</span>
                     <span className={`capitalize ${company.company_status.toLowerCase() === 'active' ? 'text-green-600' : 'text-gray-500'}`}>
                       {company.company_status}
                     </span>
                   </>
                 )}
+                {company.company_type && (
+                  <>
+                    <span className="mx-1">•</span>
+                    <span className="uppercase text-xs bg-gray-100 px-1.5 py-0.5 rounded">
+                      {company.company_type}
+                    </span>
+                  </>
+                )}
               </div>
+              {addressDisplay && (
+                <div className="flex items-center gap-1 text-sm text-gray-500 mt-1">
+                  <MapPin className="h-3 w-3" />
+                  <span>{addressDisplay}</span>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Dates in a single row */}
-          <div className="mt-3 flex gap-6">
+          <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
+            {company.date_of_creation && (
+              <div>
+                <p className="text-xs text-gray-500">Incorporated</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {formatDate(company.date_of_creation)}
+                </p>
+              </div>
+            )}
             <div>
               <p className="text-xs text-gray-500">Confirmation Statement Due</p>
               <p className="text-sm font-medium text-gray-900">

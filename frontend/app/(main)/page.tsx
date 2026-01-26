@@ -327,48 +327,48 @@ const handleRedirect = () => {
               </div>
             </div>
 
-            {/* Card 2: Dormant Company Accounts (Featured) */}
-            <div className="bg-teal-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col transform md:scale-105">
+            {/* Card 2: Dormant Company Accounts */}
+            <div className="bg-white rounded-2xl overflow-hidden flex flex-col">
               {/* Icon */}
               <div className="p-8">
-                <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center mx-auto">
-                  <svg className="w-10 h-10 text-teal-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-16 h-16 bg-teal-600 rounded-xl flex items-center justify-center mx-auto">
+                  <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </div>
               </div>
 
-              <div className="px-8 pb-8 flex-grow flex flex-col text-white">
-                <h3 className="text-2xl font-bold text-center">Dormant Company Accounts</h3>
-                <p className="text-teal-100 text-center mt-2 mb-8">File accounts for non-trading (dormant) companies</p>
+              <div className="px-8 pb-8 flex-grow flex flex-col">
+                <h3 className="text-2xl font-bold text-gray-900 text-center">Dormant Company Accounts</h3>
+                <p className="text-gray-600 text-center mt-2 mb-8">File accounts for non-trading (dormant) companies</p>
 
-                <p className="text-4xl font-bold text-center mb-10">
-                  £79.99 <span className="text-lg font-normal opacity-90">inclusive VAT</span>
+                <p className="text-4xl font-bold text-gray-900 text-center mb-10">
+                  £79.99 <span className="text-lg font-normal text-gray-600">inclusive VAT</span>
                 </p>
 
                 <button
                 onClick={handleRedirect}
-                className="bg-white hover:bg-gray-100 text-teal-700 font-medium py-3 px-8 rounded-lg mb-10
+                className="bg-teal-800 hover:bg-teal-900 text-white font-medium py-3 px-8 rounded-lg mb-10
              transition-all duration-300 ease-in-out
-             hover:shadow-[0_8px_25px_rgba(256,256,256,0.5)]"
+             hover:shadow-[0_8px_25px_rgba(13,148,136,0.5)]"
 >
                   Get Started
                 </button>
 
                 <div className="space-y-3">
-                  <h4 className="font-semibold">Services Included:</h4>
+                  <h4 className="font-semibold text-gray-900">Services Included:</h4>
                   <ul className="space-y-2">
-                    <li className="flex items-center gap-3">
-                      <span className="text-teal-300"><SquareCheckBig className="w-5 h-5" /></span> Suitable for dormant companies
+                    <li className="flex items-center gap-3 text-gray-700">
+                      <span className="text-teal-600"><SquareCheckBig className="w-5 h-5" /></span> Suitable for dormant companies
                     </li>
-                    <li className="flex items-center gap-3">
-                      <span className="text-teal-300"><SquareCheckBig className="w-5 h-5" /></span> Full compliance check
+                    <li className="flex items-center gap-3 text-gray-700">
+                      <span className="text-teal-600"><SquareCheckBig className="w-5 h-5" /></span> Full compliance check
                     </li>
-                    <li className="flex items-center gap-3">
-                      <span className="text-teal-300"><SquareCheckBig className="w-5 h-5" /></span> Filed within 48 hours
+                    <li className="flex items-center gap-3 text-gray-700">
+                      <span className="text-teal-600"><SquareCheckBig className="w-5 h-5" /></span> Filed within 48 hours
                     </li>
-                    <li className="flex items-center gap-3">
-                      <span className="text-teal-300"><SquareCheckBig className="w-5 h-5" /></span> Professional preparation
+                    <li className="flex items-center gap-3 text-gray-700">
+                      <span className="text-teal-600"><SquareCheckBig className="w-5 h-5" /></span> Professional preparation
                     </li>
                   </ul>
                 </div>

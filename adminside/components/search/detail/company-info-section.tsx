@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Calendar, FileText, Receipt, Building2, Hash, Clock, MapPin, Briefcase } from "lucide-react";
 
 interface CompanyInfoSectionProps {
   company: any;
@@ -29,17 +29,22 @@ const getTimeRemaining = (dateString?: string) => {
     const diffTime = targetDate.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays < 0) return 'Overdue';
+    if (diffDays < 0) {
+      const absDays = Math.abs(diffDays);
+      if (absDays < 30) return `${absDays} days overdue`;
+      if (absDays < 365) return `${Math.floor(absDays / 30)} months overdue`;
+      return 'Overdue';
+    }
     if (diffDays === 0) return 'Due today';
-    if (diffDays === 1) return 'Due in 1 day';
-    if (diffDays < 30) return `Due in ${diffDays} days`;
+    if (diffDays === 1) return 'in 1 day';
+    if (diffDays < 30) return `in ${diffDays} days`;
 
     const months = Math.floor(diffDays / 30);
-    if (months === 1) return 'Due in 1 month';
-    if (months < 12) return `Due in ${months} months`;
+    if (months === 1) return 'in 1 month';
+    if (months < 12) return `in ${months} months`;
 
     const years = Math.floor(months / 12);
-    return years === 1 ? 'Due in 1 year' : `Due in ${years} years`;
+    return years === 1 ? 'in 1 year' : `in ${years} years`;
   } catch {
     return '';
   }
@@ -81,13 +86,13 @@ const getCompanyType = (type: string) => {
 const getStatusColor = (status: string) => {
   const statusLower = status.toLowerCase();
   if (['active'].includes(statusLower)) {
-    return 'bg-green-100 text-green-700';
+    return 'bg-green-100 text-green-700 border-green-300';
   } else if (['dissolved', 'liquidation', 'receivership', 'administration', 'insolvency-proceedings', 'removed', 'closed', 'converted-closed'].includes(statusLower)) {
-    return 'bg-red-100 text-red-700';
+    return 'bg-red-100 text-red-700 border-red-300';
   } else if (statusLower === 'voluntary-arrangement') {
-    return 'bg-yellow-100 text-yellow-700';
+    return 'bg-yellow-100 text-yellow-700 border-yellow-300';
   }
-  return 'bg-gray-100 text-gray-700';
+  return 'bg-gray-100 text-gray-700 border-gray-300';
 };
 
 const getSICDescription = (code: string) => {
@@ -114,120 +119,162 @@ export default function CompanyInfoSection({ company }: CompanyInfoSectionProps)
     : null;
 
   return (
-    <div className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm">
-      {/* Key dates - always visible */}
-      <div className="space-y-3 text-base mb-4">
+    <div className="bg-white border-2 border-teal-200 rounded-2xl p-8 shadow-lg">
+      {/* Key dates - 2 column grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {company.accounts?.accounting_reference_date && company.accounts?.next_accounts?.period_end_on && (
-          <div className="flex flex-wrap gap-2">
-            <span className="text-gray-700">Company Year End:</span>
-            <span className="text-gray-900">
-              <strong>{yearEndDate}</strong>
-              <span className="font-semibold text-teal-700 ml-2">
-                ({getTimeRemaining(company.accounts.next_accounts.period_end_on)})
-              </span>
-            </span>
+          <div className="bg-gradient-to-br from-teal-50 to-white border border-teal-100 rounded-xl p-5 flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-teal-100 flex items-center justify-center flex-shrink-0">
+              <Calendar className="w-6 h-6 text-teal-700" />
+            </div>
+            <div>
+              <p className="text-gray-600 text-base font-medium mb-1">Company Year End</p>
+              <p className="text-xl font-bold text-gray-900">{yearEndDate}</p>
+              <p className="text-teal-700 font-semibold text-base mt-1">
+                {getTimeRemaining(company.accounts.next_accounts.period_end_on)}
+              </p>
+            </div>
           </div>
         )}
 
         {company.confirmation_statement?.next_due && (
-          <div className="flex flex-wrap gap-2">
-            <span className="text-gray-700">Next Confirmation Statement Due:</span>
-            <span className="text-gray-900">
-              <strong>{formatDate(company.confirmation_statement.next_due)}</strong>
-              <span className="font-semibold text-teal-700 ml-2">
-                ({getTimeRemaining(company.confirmation_statement.next_due)})
-              </span>
-            </span>
+          <div className="bg-gradient-to-br from-blue-50 to-white border border-blue-100 rounded-xl p-5 flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+              <FileText className="w-6 h-6 text-blue-700" />
+            </div>
+            <div>
+              <p className="text-gray-600 text-base font-medium mb-1">Next Confirmation Statement Due</p>
+              <p className="text-xl font-bold text-gray-900">{formatDate(company.confirmation_statement.next_due)}</p>
+              <p className="text-blue-700 font-semibold text-base mt-1">
+                {getTimeRemaining(company.confirmation_statement.next_due)}
+              </p>
+            </div>
           </div>
         )}
 
         {company.accounts?.next_due && (
-          <div className="flex flex-wrap gap-2">
-            <span className="text-gray-700">Accounts Due To Be Filed By:</span>
-            <span className="text-gray-900">
-              <strong>{formatDate(company.accounts.next_due)}</strong>
-              <span className="font-semibold text-teal-700 ml-2">
-                ({getTimeRemaining(company.accounts.next_due)})
-              </span>
-            </span>
+          <div className="bg-gradient-to-br from-purple-50 to-white border border-purple-100 rounded-xl p-5 flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center flex-shrink-0">
+              <FileText className="w-6 h-6 text-purple-700" />
+            </div>
+            <div>
+              <p className="text-gray-600 text-base font-medium mb-1">Accounts Due To Be Filed By</p>
+              <p className="text-xl font-bold text-gray-900">{formatDate(company.accounts.next_due)}</p>
+              <p className="text-purple-700 font-semibold text-base mt-1">
+                {getTimeRemaining(company.accounts.next_due)}
+              </p>
+            </div>
           </div>
         )}
 
         {corpTaxDue && (
-          <div className="flex flex-wrap gap-2">
-            <span className="text-gray-700">Corporation Tax Due To Be Paid By:</span>
-            <span className="text-gray-900">
-              <strong>{formatDate(corpTaxDue)}</strong>
-              <span className="font-semibold text-teal-700 ml-2">
-                ({getTimeRemaining(corpTaxDue)})
-              </span>
-            </span>
+          <div className="bg-gradient-to-br from-orange-50 to-white border border-orange-100 rounded-xl p-5 flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
+              <Receipt className="w-6 h-6 text-orange-700" />
+            </div>
+            <div>
+              <p className="text-gray-600 text-base font-medium mb-1">Corporation Tax Due To Be Paid By</p>
+              <p className="text-xl font-bold text-gray-900">{formatDate(corpTaxDue)}</p>
+              <p className="text-orange-700 font-semibold text-base mt-1">
+                {getTimeRemaining(corpTaxDue)}
+              </p>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Additional details - collapsible */}
-      <div className={`space-y-3 text-base ${showMore ? 'block' : 'hidden'} mt-4 pt-4 border-t border-gray-200`}>
-        <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-gray-700">Company Status:</span>
-          <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(company.company_status)}`}>
-            {company.company_status.charAt(0).toUpperCase() + company.company_status.slice(1)}
-          </span>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <span className="text-gray-700">Company Type:</span>
-          <span className="text-gray-900"><strong>{getCompanyType(company.type || company.company_type)}</strong></span>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <span className="text-gray-700">Company Number:</span>
-          <span className="text-gray-900"><strong>{company.company_number}</strong></span>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <span className="text-gray-700">Created On:</span>
-          <span className="text-gray-900"><strong>{formatDate(company.date_of_creation)}</strong></span>
-        </div>
-
-        {company.sic_codes && company.sic_codes.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            <span className="text-gray-700">Activity:</span>
-            <span className="text-gray-900"><strong>{getSICDescription(company.sic_codes[0])}</strong></span>
+      {/* Additional details - collapsible, 2 column grid */}
+      <div className={`${showMore ? 'block' : 'hidden'} mt-6 pt-6 border-t-2 border-gray-100`}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
+              <Building2 className="w-6 h-6 text-green-700" />
+            </div>
+            <div>
+              <p className="text-gray-600 text-base font-medium mb-1">Company Status</p>
+              <span className={`inline-block px-4 py-2 rounded-lg text-lg font-bold border ${getStatusColor(company.company_status)}`}>
+                {company.company_status.charAt(0).toUpperCase() + company.company_status.slice(1)}
+              </span>
+            </div>
           </div>
-        )}
 
-        {company.registered_office_address && (
-          <div className="flex flex-wrap gap-2">
-            <span className="text-gray-700">Registered address:</span>
-            <span className="text-gray-900">
-              <strong>
-                {[
-                  company.registered_office_address.address_line_1,
-                  company.registered_office_address.address_line_2,
-                  company.registered_office_address.locality,
-                  company.registered_office_address.postal_code,
-                ]
-                  .filter(Boolean)
-                  .join(', ')}
-              </strong>
-            </span>
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0">
+              <Building2 className="w-6 h-6 text-indigo-700" />
+            </div>
+            <div>
+              <p className="text-gray-600 text-base font-medium mb-1">Company Type</p>
+              <p className="text-xl font-bold text-gray-900">{getCompanyType(company.type || company.company_type)}</p>
+            </div>
           </div>
-        )}
+
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-cyan-100 flex items-center justify-center flex-shrink-0">
+              <Hash className="w-6 h-6 text-cyan-700" />
+            </div>
+            <div>
+              <p className="text-gray-600 text-base font-medium mb-1">Company Number</p>
+              <p className="text-xl font-bold text-gray-900">{company.company_number}</p>
+            </div>
+          </div>
+
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-pink-100 flex items-center justify-center flex-shrink-0">
+              <Clock className="w-6 h-6 text-pink-700" />
+            </div>
+            <div>
+              <p className="text-gray-600 text-base font-medium mb-1">Created On</p>
+              <p className="text-xl font-bold text-gray-900">{formatDate(company.date_of_creation)}</p>
+            </div>
+          </div>
+
+          {company.sic_codes && company.sic_codes.length > 0 && (
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <Briefcase className="w-6 h-6 text-amber-700" />
+              </div>
+              <div>
+                <p className="text-gray-600 text-base font-medium mb-1">Activity</p>
+                <p className="text-xl font-bold text-gray-900">{getSICDescription(company.sic_codes[0])}</p>
+              </div>
+            </div>
+          )}
+
+          {company.registered_office_address && (
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-rose-100 flex items-center justify-center flex-shrink-0">
+                <MapPin className="w-6 h-6 text-rose-700" />
+              </div>
+              <div>
+                <p className="text-gray-600 text-base font-medium mb-1">Registered Address</p>
+                <p className="text-lg font-bold text-gray-900">
+                  {[
+                    company.registered_office_address.address_line_1,
+                    company.registered_office_address.address_line_2,
+                    company.registered_office_address.locality,
+                    company.registered_office_address.postal_code,
+                  ]
+                    .filter(Boolean)
+                    .join(', ')}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Show more/less button */}
       <button
         onClick={() => setShowMore(!showMore)}
-        className="mt-4 text-teal-700 hover:text-teal-800 font-medium text-sm flex items-center gap-1"
+        className="mt-6 bg-teal-50 hover:bg-teal-100 text-teal-700 font-semibold text-base px-6 py-3 rounded-xl flex items-center gap-2 transition-colors"
       >
         {showMore ? (
           <>
-            Show less <ChevronUp className="w-4 h-4" />
+            Show less <ChevronUp className="w-5 h-5" />
           </>
         ) : (
           <>
-            Show more <ChevronDown className="w-4 h-4" />
+            Show more details <ChevronDown className="w-5 h-5" />
           </>
         )}
       </button>

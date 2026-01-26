@@ -8,7 +8,7 @@
 
     "dev:frontend": "cd frontend && npm run dev",
     "dev:admin": "cd adminside && npm run dev -- -p 3001",
-<<<<<<< HEAD
+    "dev:socket": "cd socket-server && npm run dev",
     "build": "npm run build:frontend && npm run build:admin && npm run build:socket",
     "build:frontend": "cd frontend && npm run build",
     "build:admin": "cd adminside && npm run build",
@@ -28,19 +28,6 @@
     "pm2:list": "pm2 list",
     "pm2:save": "pm2 save",
     "pm2:startup": "pm2 startup"
-=======
-    "dev:socket": "cd socket-server && npm run dev",
-
-    "build": "npm run build:frontend && npm run build:admin",
-    "build:frontend": "cd frontend && npm run build",
-    "build:admin": "cd adminside && npm run build",
-
-    "install:all": "npm install && cd frontend && npm install && cd ../adminside && npm install && cd ../server-socket && npm install && cd ../packages/shared && npm install && cd ../..",
-
-    "clean": "rm -rf node_modules frontend/node_modules adminside/node_modules server-socket/node_modules packages/*/node_modules frontend/.next adminside/.next",
-
-    "types:generate": "echo \"Run: npx supabase gen types typescript --project-id YOUR_PROJECT_ID > packages/shared/types/database.types.ts\""
->>>>>>> c914c29 (test)
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
