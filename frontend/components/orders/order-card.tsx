@@ -97,7 +97,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ orderId, fullOrderId, items, stat
           </div>
 
           <div className="flex gap-3">
-            {status === "Pending" && onWithdraw && (
+            {/* {status === "Pending" && onWithdraw && (
               <button
                 onClick={onWithdraw}
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-medium"
@@ -112,7 +112,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ orderId, fullOrderId, items, stat
               >
                 Write a review
               </button>
-            )}
+            )} */}
             <Link
               href={`/messages?orderId=${fullOrderId}`}
               className="flex items-center gap-2 px-4 py-2 bg-teal-700 text-white rounded-lg hover:bg-teal-800 transition text-sm font-medium"

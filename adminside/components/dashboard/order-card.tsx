@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Check } from "lucide-react";
+import { ChevronDown, Check, MessageCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 type LineItem = {
   id: string;
@@ -44,6 +45,11 @@ export default function OrderCard({ order, onStatusUpdate }: OrderCardProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  const handleChatClick = () => {
+    router.push(`/chat?orderId=${order.id}`);
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -111,6 +117,15 @@ export default function OrderCard({ order, onStatusUpdate }: OrderCardProps) {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Chat Button */}
+          <button
+            onClick={handleChatClick}
+            className="p-2 rounded-full hover:bg-primary/10 transition-colors text-primary"
+            title="Chat with customer"
+          >
+            <MessageCircle size={20} />
+          </button>
+
           {/* Status Dropdown */}
           <div className="relative" ref={dropdownRef}>
             <button

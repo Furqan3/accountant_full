@@ -7,6 +7,8 @@ import { CartProvider } from "@/context/cart-context";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { ToastContainer } from "react-toastify"
+import { MessageNotificationListener } from "@/components/notifications/message-notification"
+import "react-toastify/dist/ReactToastify.css"
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -23,10 +25,11 @@ export default function RootLayout({
       <body>
         <AuthProvider>
           <SocketProvider>
+            <MessageNotificationListener />
             <CartProvider>
               <Elements stripe={stripePromise}>
                 {children}
-             <ToastContainer position="bottom-right" />
+                <ToastContainer position="bottom-right" />
               </Elements>
             </CartProvider>
           </SocketProvider>

@@ -3,6 +3,23 @@ import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { getUser } from "@/lib/supabase-server";
 import { createServiceRoleClient } from "@/lib/supabase";
+import { sendEmail, getOrderConfirmationEmail } from "@/lib/email";
+
+// Helper to format service type for display
+function formatServiceType(serviceType: string): string {
+  const serviceNames: { [key: string]: string } = {
+    'confirmation-statement': 'Confirmation Statement',
+    'annual-accounts': 'Annual Accounts',
+    'vat-return': 'VAT Return',
+    'corporation-tax': 'Corporation Tax',
+    'payroll': 'Payroll Services',
+    'bookkeeping': 'Bookkeeping',
+    'company-formation': 'Company Formation',
+    'registered-office': 'Registered Office',
+    'dormant-accounts': 'Dormant Accounts',
+  }
+  return serviceNames[serviceType] || serviceType?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Service'
+}
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -56,6 +73,56 @@ export async function POST(req: Request) {
     if (orderError) {
       console.error('Error creating order:', orderError);
       // Continue even if database insert fails - payment is more important
+    }
+
+    // Send order confirmation email
+    if (order) {
+      try {
+        // Get user profile for name
+        const { data: profile } = await (supabase as any)
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .single();
+
+        // Extract items from metadata
+        let items: Array<{name: string, price: number, quantity?: number, companyName?: string, companyNumber?: string}> = [];
+        let companyName = '';
+
+        if (metadata?.items) {
+          const metaItems = typeof metadata.items === 'string' ? JSON.parse(metadata.items) : metadata.items;
+          items = metaItems.map((item: any) => ({
+            name: formatServiceType(item.name || item.service_type || 'Service'),
+            price: item.price || 0,
+            quantity: item.quantity || 1,
+            companyName: item.companyName,
+            companyNumber: item.companyNumber
+          }));
+          if (metaItems?.[0]?.companyName) {
+            companyName = metaItems[0].companyName;
+          }
+        }
+
+        const emailContent = getOrderConfirmationEmail({
+          userName: profile?.full_name || user.email?.split('@')[0] || 'Customer',
+          orderNumber: order.id.slice(0, 8).toUpperCase(),
+          amount,
+          items: items.length > 0 ? items : undefined,
+          companyName: companyName || undefined
+        });
+
+        await sendEmail({
+          to: user.email!,
+          subject: emailContent.subject,
+          html: emailContent.html,
+          text: emailContent.text
+        });
+
+        console.log('Order confirmation email sent to:', user.email);
+      } catch (emailError) {
+        console.error('Error sending order confirmation email:', emailError);
+        // Don't fail the order creation if email fails
+      }
     }
 
     return NextResponse.json({

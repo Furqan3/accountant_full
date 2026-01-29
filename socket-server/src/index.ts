@@ -51,6 +51,10 @@ io.on('connection', (socket) => {
     console.log(`👨‍💻 Admin ${email} joined the 'admins' room.`)
   }
 
+  // Add all users to their own user room for global notifications
+  socket.join(`user:${userId}`)
+  console.log(`👤 User ${email} joined their personal room: user:${userId}`)
+
   // Register message handlers for this socket
   registerMessageHandlers(io, socket)
 })
@@ -68,10 +72,23 @@ const messageChannel = supabase
       schema: 'public',
       table: 'messages',
     },
-    (payload) => {
+    async (payload) => {
       const { eventType } = payload
       const newMessage = payload.new as Message
       const orderId = newMessage.order_id
+
+      // Get order owner to broadcast to their personal room
+      let orderOwnerId: string | null = null
+      try {
+        const { data: order } = await supabase
+          .from('orders')
+          .select('user_id')
+          .eq('id', orderId)
+          .single()
+        orderOwnerId = order?.user_id || null
+      } catch (error) {
+        console.error('Error fetching order owner:', error)
+      }
 
       if (eventType === 'INSERT') {
         console.log(`📨 New message in DB for order:${orderId}, broadcasting...`)
@@ -79,12 +96,21 @@ const messageChannel = supabase
         io.to(`order:${orderId}`).emit('new-message', { orderId, message: newMessage })
         // Also broadcast to all admins so they get notified even if not in the room
         io.to('admins').emit('new-message', { orderId, message: newMessage })
+        // Also broadcast to the order owner's personal room for global notifications
+        if (orderOwnerId) {
+          io.to(`user:${orderOwnerId}`).emit('new-message', { orderId, message: newMessage })
+          console.log(`📡 Also broadcast to user:${orderOwnerId}`)
+        }
       } else if (eventType === 'UPDATE') {
         console.log(`🔄 Message updated in DB for order:${orderId}, broadcasting...`)
         // Broadcast to the specific order room
         io.to(`order:${orderId}`).emit('message-updated', { orderId, message: newMessage })
         // Also broadcast to all admins
         io.to('admins').emit('message-updated', { orderId, message: newMessage })
+        // Also broadcast to the order owner's personal room
+        if (orderOwnerId) {
+          io.to(`user:${orderOwnerId}`).emit('message-updated', { orderId, message: newMessage })
+        }
       }
     }
   )

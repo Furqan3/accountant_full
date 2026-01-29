@@ -19,7 +19,26 @@ function formatServiceType(serviceType: string): string {
     'registered-office': 'Registered Office',
     'dormant-accounts': 'Dormant Accounts',
   }
-  return serviceNames[serviceType] || serviceType.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+  return serviceNames[serviceType] || serviceType?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Service'
+}
+
+// Extract order items from metadata
+function extractOrderItems(metadata: any): Array<{name: string, price: number, quantity?: number, companyName?: string, companyNumber?: string}> {
+  try {
+    if (metadata?.items) {
+      const items = typeof metadata.items === 'string' ? JSON.parse(metadata.items) : metadata.items
+      return items.map((item: any) => ({
+        name: formatServiceType(item.name || item.service_type || 'Service'),
+        price: item.price || 0,
+        quantity: item.quantity || 1,
+        companyName: item.companyName,
+        companyNumber: item.companyNumber
+      }))
+    }
+  } catch (e) {
+    console.error('Error parsing order items:', e)
+  }
+  return []
 }
 
 export async function POST(req: NextRequest) {
@@ -55,7 +74,7 @@ export async function POST(req: NextRequest) {
             updated_at: new Date().toISOString()
           })
           .eq('stripe_payment_intent_id', paymentIntent.id)
-          .select('id, user_id, service_type, company_name')
+          .select('id, user_id, service_type, company_name, metadata, amount')
           .single()
 
         if (error) {
@@ -63,25 +82,54 @@ export async function POST(req: NextRequest) {
         } else {
           console.log('Order payment marked as paid:', paymentIntent.id)
 
-          // Send payment confirmation email
+          // Send payment confirmation email with receipt
           if (order) {
             try {
-              // Get user email from auth.users table
+              // Get user profile for name
               const { data: userData } = await (supabase as any)
                 .from('profiles')
                 .select('full_name')
                 .eq('id', order.user_id)
                 .single()
 
+              // Get user email from auth
               const { data: { user } } = await (supabase as any).auth.admin.getUserById(order.user_id)
 
               if (user?.email) {
+                // Extract items from metadata
+                const items = extractOrderItems(order.metadata)
+                let companyName = order.company_name
+                let serviceName = formatServiceType(order.service_type)
+
+                // If no items but metadata has items, try to extract company name
+                if (items.length === 0 && order.metadata?.items) {
+                  try {
+                    const metaItems = typeof order.metadata.items === 'string'
+                      ? JSON.parse(order.metadata.items)
+                      : order.metadata.items
+                    if (metaItems?.[0]?.companyName) {
+                      companyName = metaItems[0].companyName
+                    }
+                    if (metaItems?.[0]?.name) {
+                      serviceName = formatServiceType(metaItems[0].name)
+                    }
+                  } catch (e) {}
+                }
+
                 const emailContent = getPaymentConfirmationEmail({
                   userName: userData?.full_name || 'Customer',
                   orderNumber: order.id.slice(0, 8).toUpperCase(),
                   amount: paymentIntent.amount,
-                  serviceName: formatServiceType(order.service_type),
-                  companyName: order.company_name
+                  serviceName,
+                  companyName,
+                  items: items.length > 0 ? items : undefined,
+                  paymentDate: new Date().toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })
                 })
 
                 await sendEmail({
@@ -91,7 +139,7 @@ export async function POST(req: NextRequest) {
                   text: emailContent.text
                 })
 
-                console.log('Payment confirmation email sent to:', user.email)
+                console.log('Payment receipt email sent to:', user.email)
               }
             } catch (emailError) {
               console.error('Error sending payment confirmation email:', emailError)

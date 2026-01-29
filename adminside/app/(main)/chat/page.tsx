@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { useSocket } from "@/contexts/socket-context";
 import ChatSidebar, { ChatConversation } from "@/components/chat/chat-sidebar";
 import ChatMessages, { Message } from "@/components/chat/chat-messages";
@@ -8,6 +9,8 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function ChatPage() {
+  const searchParams = useSearchParams();
+  const orderIdFromUrl = searchParams.get('orderId');
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState<string>("");
   const selectedConversationIdRef = useRef<string>("");
@@ -24,6 +27,44 @@ export default function ChatPage() {
   useEffect(() => {
     fetchConversations();
   }, []);
+
+  // Handle orderId from URL
+  useEffect(() => {
+    if (orderIdFromUrl && conversations.length > 0) {
+      // Check if order exists in conversations
+      const existingConv = conversations.find(c => c.id === orderIdFromUrl);
+      if (existingConv) {
+        setSelectedConversationId(orderIdFromUrl);
+      } else {
+        // Fetch order details and add as new conversation
+        fetchOrderForNewChat(orderIdFromUrl);
+      }
+    }
+  }, [orderIdFromUrl, conversations.length]);
+
+  const fetchOrderForNewChat = async (orderId: string) => {
+    try {
+      const res = await fetch(`/api/orders/${orderId}`);
+      const data = await res.json();
+
+      if (res.ok && data.order) {
+        // Add this order as a new conversation at the beginning
+        setConversations(prev => {
+          // Check if already exists
+          if (prev.some(c => c.id === orderId)) {
+            return prev;
+          }
+          return [data.order, ...prev];
+        });
+        setSelectedConversationId(orderId);
+      } else {
+        toast.error('Order not found');
+      }
+    } catch (error) {
+      console.error('Error fetching order for new chat:', error);
+      toast.error('Failed to load order');
+    }
+  };
 
   // Fetch messages when conversation is selected
   useEffect(() => {
@@ -177,8 +218,14 @@ export default function ChatPage() {
 
       if (res.ok && data.conversations) {
         setConversations(data.conversations);
-        // Auto-select first conversation
-        if (data.conversations.length > 0 && !selectedConversationId) {
+        // If we have orderId from URL, use that, otherwise auto-select first conversation
+        if (orderIdFromUrl) {
+          const existingConv = data.conversations.find((c: ChatConversation) => c.id === orderIdFromUrl);
+          if (existingConv) {
+            setSelectedConversationId(orderIdFromUrl);
+          }
+          // If not found, the other useEffect will handle fetching the order
+        } else if (data.conversations.length > 0 && !selectedConversationId) {
           setSelectedConversationId(data.conversations[0].id);
         }
       }
@@ -304,6 +351,13 @@ export default function ChatPage() {
     (conv) => conv.id === selectedConversationId
   );
 
+  // If no conversations but we have an orderId from URL, try to load that order
+  useEffect(() => {
+    if (!isLoadingConversations && conversations.length === 0 && orderIdFromUrl) {
+      fetchOrderForNewChat(orderIdFromUrl);
+    }
+  }, [isLoadingConversations, conversations.length, orderIdFromUrl]);
+
   if (isLoadingConversations) {
     return (
       <div className="h-full flex items-center justify-center bg-white rounded-2xl ">
@@ -315,7 +369,7 @@ export default function ChatPage() {
     );
   }
 
-  if (conversations.length === 0) {
+  if (conversations.length === 0 && !orderIdFromUrl) {
     return (
       <div className="h-full flex items-center justify-center bg-white rounded-2xl ">
         <div className="text-center">

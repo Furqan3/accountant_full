@@ -159,6 +159,13 @@ export function registerMessageHandlers(io: Server, socket: Socket) {
         message,
       })
 
+      // Also broadcast to the order owner's personal room for global notifications
+      io.to(`user:${order.user_id}`).emit('new-message', {
+        orderId,
+        message,
+      })
+      console.log(`📡 Also broadcast to user:${order.user_id} personal room`)
+
       // Acknowledge success
       callback({ success: true })
 
@@ -171,7 +178,7 @@ export function registerMessageHandlers(io: Server, socket: Socket) {
           // Get order details and user info
           const { data: orderDetails } = await supabase
             .from('orders')
-            .select('user_id, service_type')
+            .select('user_id, metadata')
             .eq('id', orderId)
             .single()
 
@@ -187,12 +194,29 @@ export function registerMessageHandlers(io: Server, socket: Socket) {
             const { data: authData } = await supabase.auth.admin.getUserById(orderDetails.user_id)
             const userEmail = authData?.user?.email
 
+            // Extract service name and company from metadata
+            let serviceName = 'Service'
+            let companyName = ''
+            try {
+              if (orderDetails.metadata?.items) {
+                const items = typeof orderDetails.metadata.items === 'string'
+                  ? JSON.parse(orderDetails.metadata.items)
+                  : orderDetails.metadata.items
+                if (items && items.length > 0) {
+                  serviceName = formatServiceType(items[0].name || items[0].service_type || 'service')
+                  companyName = items[0].companyName || ''
+                }
+              }
+            } catch (e) {
+              console.error('Error parsing order metadata:', e)
+            }
+
             if (userEmail) {
               const emailContent = getNewMessageEmailContent({
                 userName: profile?.full_name || 'Customer',
                 orderNumber: orderId.slice(0, 8).toUpperCase(),
                 messagePreview: messageText,
-                serviceName: formatServiceType(orderDetails.service_type)
+                serviceName: companyName ? `${serviceName} - ${companyName}` : serviceName
               })
 
               await sendEmail({
