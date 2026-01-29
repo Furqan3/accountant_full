@@ -10,29 +10,33 @@ export async function GET(
     const supabaseAdmin = getSupabaseAdmin();
 
     // Fetch order details
-    const { data: order, error: orderError } = await supabaseAdmin
+    const { data: orderData, error: orderError } = await supabaseAdmin
       .from('orders')
       .select('*')
       .eq('id', orderId)
       .single();
 
-    if (orderError || !order) {
+    if (orderError || !orderData) {
       return NextResponse.json(
         { error: 'Order not found' },
         { status: 404 }
       );
     }
 
+    const order = orderData as any;
+
     // Fetch user details
     const { data: users } = await supabaseAdmin.auth.admin.listUsers();
     const authUser = users?.users?.find((u: any) => u.id === order.user_id);
 
     // Fetch profile
-    const { data: profile } = await supabaseAdmin
+    const { data: profileData } = await supabaseAdmin
       .from('profiles')
       .select('id, full_name')
       .eq('id', order.user_id)
       .single();
+
+    const profile = profileData as any;
 
     // Extract company info from metadata
     let companyName = 'Unknown Company';
