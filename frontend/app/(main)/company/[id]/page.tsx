@@ -12,6 +12,7 @@ import ServiceCard from "@/components/company/service-card"
 import OrderSummary from "@/components/checkout/order-summary"
 import { useCart } from "@/context/cart-context"
 import { getTimeRemaining } from "@/lib/date-utils"
+import { getServiceById, getTotalPrice } from "@/lib/services-config"
 
 
 export default function CompanyDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -50,6 +51,17 @@ export default function CompanyDetailsPage({ params }: { params: Promise<{ id: s
   if (!company) return <p className="text-center mt-20">Loading...</p>
 
 
+  // Get prices from centralized config
+  const confirmationStatement = getServiceById('confirmation-statement')
+  const vatRegistration = getServiceById('vat-registration')
+  const payeRegistration = getServiceById('paye-registration')
+  const changeCompanyName = getServiceById('change-company-name')
+  const changeAddress = getServiceById('change-registered-address')
+  const dissolution = getServiceById('company-dissolution')
+  const dormantAccounts = getServiceById('dormant-accounts')
+  const utrRegistration = getServiceById('utr-registration')
+  const changeDirectors = getServiceById('change-directors')
+
   const services = [
     {
       title: "File Confirmation Statement",
@@ -62,7 +74,7 @@ export default function CompanyDetailsPage({ params }: { params: Promise<{ id: s
         "Companies House Fees Included",
         "Friendly Annual Reminder",
       ],
-      price: 65.99,
+      price: confirmationStatement ? getTotalPrice(confirmationStatement) / 100 : 89,
     },
     {
       title: "Register Company for VAT",
@@ -72,7 +84,7 @@ export default function CompanyDetailsPage({ params }: { params: Promise<{ id: s
         "VAT scheme advice",
         "Quick turnaround",
       ],
-      price: 54.99,
+      price: vatRegistration ? vatRegistration.price / 100 : 59,
     },
     {
       title: "Register Company for PAYE",
@@ -82,7 +94,7 @@ export default function CompanyDetailsPage({ params }: { params: Promise<{ id: s
         "Employer reference obtained",
         "Basic payroll setup advice",
       ],
-      price: 39.99,
+      price: payeRegistration ? payeRegistration.price / 100 : 49,
     },
     {
       title: "Change Company Name",
@@ -92,7 +104,7 @@ export default function CompanyDetailsPage({ params }: { params: Promise<{ id: s
         "Resolution & filing support",
         "Companies House fee included",
       ],
-      price: 59.99,
+      price: changeCompanyName ? changeCompanyName.price / 100 : 59.99,
     },
     {
       title: "Change Registered Address",
@@ -102,7 +114,7 @@ export default function CompanyDetailsPage({ params }: { params: Promise<{ id: s
         "Proof of address assistance",
         "Instant compliance update",
       ],
-      price: 49.99,
+      price: changeAddress ? changeAddress.price / 100 : 49.99,
     },
     {
       title: "Company Dissolution",
@@ -112,7 +124,7 @@ export default function CompanyDetailsPage({ params }: { params: Promise<{ id: s
         "HMRC clearance assistance",
         "Full guidance throughout the process",
       ],
-      price: 149.99,
+      price: dissolution ? dissolution.price / 100 : 189,
     },
     {
       title: "File Dormant Accounts",
@@ -125,7 +137,7 @@ export default function CompanyDetailsPage({ params }: { params: Promise<{ id: s
         "Your company is considered dormant by Companies House if it's had no 'significant' transactions",
         "A non trading company is one that although may be inactive for a portion of time may still experience transactions",
       ],
-      price: 79.99,
+      price: dormantAccounts ? dormantAccounts.price / 100 : 149,
     },
     {
       title: "UTR Registration",
@@ -135,7 +147,7 @@ export default function CompanyDetailsPage({ params }: { params: Promise<{ id: s
         "Follow-up with HMRC",
         "Ideal for new directors",
       ],
-      price: 39.99,
+      price: utrRegistration ? utrRegistration.price / 100 : 49.99,
     },
     {
       title: "Change Your Directors",
@@ -145,12 +157,12 @@ export default function CompanyDetailsPage({ params }: { params: Promise<{ id: s
         "ID verification assistance",
         "Fast processing",
       ],
-      price: 39.99,
+      price: changeDirectors ? changeDirectors.price / 100 : 39.99,
     },
     {
       title: "Accounting services",
       description: "Accounting services provide essential financial support, offering expertise in managing records, ensuring tax compliance, optimising financial performance, and saving time for individuals and businesses.",
-     
+
       price: 0,
       isViewPlans: true,
     },

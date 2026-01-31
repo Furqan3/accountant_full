@@ -7,11 +7,17 @@ import TestimonialCarousel from "@/components/home/testimonial-carousel"
 import { FaArrowRight } from "react-icons/fa"
 import { SquareCheckBig } from 'lucide-react'
 import { useState } from "react";
+import { getServiceById, formatPrice, getTotalPrice } from "@/lib/services-config";
 
 export default function Home() {
   const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState("")
   const router = useRouter()
+
+  // Get services from centralized config
+  const confirmationStatement = getServiceById('confirmation-statement')
+  const dormantAccounts = getServiceById('dormant-accounts')
+  const companyDissolution = getServiceById('company-dissolution')
 const handleRedirect = () => {
     if (!user) {
       router.push("/signup")
@@ -293,7 +299,7 @@ const handleRedirect = () => {
                 <p className="text-gray-600 text-center mt-2 mb-8">Annual confirmation of company details</p>
 
                 <p className="text-4xl font-bold text-gray-900 text-center mb-10">
-                  £65.99 <span className="text-lg font-normal text-gray-600">inclusive VAT</span>
+                  {confirmationStatement && formatPrice(getTotalPrice(confirmationStatement))} <span className="text-lg font-normal text-gray-600">inclusive VAT</span>
                 </p>
                
                   <button 
@@ -343,7 +349,7 @@ const handleRedirect = () => {
                 <p className="text-gray-600 text-center mt-2 mb-8">File accounts for non-trading (dormant) companies</p>
 
                 <p className="text-4xl font-bold text-gray-900 text-center mb-10">
-                  £79.99 <span className="text-lg font-normal text-gray-600">inclusive VAT</span>
+                  {dormantAccounts && formatPrice(dormantAccounts.price)} <span className="text-lg font-normal text-gray-600">inclusive VAT</span>
                 </p>
 
                 <button
@@ -396,7 +402,7 @@ const handleRedirect = () => {
                 <p className="text-gray-600 text-center mt-2 mb-8">Voluntary strike-off and close your company</p>
 
                 <p className="text-4xl font-bold text-gray-900 text-center mb-10">
-                  £149.99 <span className="text-lg font-normal text-gray-600">inclusive VAT</span>
+                  {companyDissolution && formatPrice(companyDissolution.price)} <span className="text-lg font-normal text-gray-600">inclusive VAT</span>
                 </p>
 
                 <button 

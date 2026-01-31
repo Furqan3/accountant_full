@@ -64,8 +64,8 @@ export default function CompanyPlansPage() {
     {
       icon: Briefcase,
       name: "New Project Basic",
-      price: "£79.99",
-      priceValue: 79.99,
+      price: "£69.99",
+      priceValue: 69.99,
       period: "/ month",
       description: "Perfect for start-ups & small businesses",
       color: "teal",
