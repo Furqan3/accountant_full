@@ -1,17 +1,7 @@
-import nodemailer from 'nodemailer'
+import { Resend } from 'resend'
 
-// Create transporter with SMTP settings
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: process.env.SMTP_SECURE === 'true',
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  })
-}
+// Initialize Resend with API key
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 interface EmailOptions {
   to: string
@@ -22,15 +12,24 @@ interface EmailOptions {
 
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
-    const transporter = createTransporter()
+    // Skip if Resend API key is not configured
+    if (!process.env.RESEND_API_KEY) {
+      console.log('Resend API key not configured, skipping email send')
+      return false
+    }
 
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || '"FilingHub" <noreply@filinghub.com>',
+    const { error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM || 'FilingHub <noreply@filinghub.co.uk>',
       to: options.to,
       subject: options.subject,
       html: options.html,
       text: options.text,
     })
+
+    if (error) {
+      console.error('Failed to send email:', error)
+      return false
+    }
 
     console.log(`Email sent successfully to ${options.to}`)
     return true
