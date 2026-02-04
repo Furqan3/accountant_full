@@ -6,7 +6,7 @@ import CompanyCard, { Company } from "@/components/search/company-cards";
 import { useBulkSelection } from "@/contexts/bulk-selection-context";
 import BulkSelectionSidebar from "@/components/search/bulk-selection-sidebar";
 import AdvancedSearchFilters, { AdvancedSearchFilters as AdvancedFiltersType } from "@/components/search/advanced-search-filters";
-import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, Loader2 } from "lucide-react";
+import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, Loader2, Database, Save, Search, CheckCircle, AlertTriangle, X } from "lucide-react";
 
 type SortOption = {
   label: string;
@@ -106,9 +106,19 @@ export default function SearchPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSearchingExternal, setIsSearchingExternal] = useState(false);
   const [externalResults, setExternalResults] = useState<Company[]>([]);
-  const [searchMode, setSearchMode] = useState<'local' | 'external' | 'advanced'>('local');
+  const [searchMode, setSearchMode] = useState<'local' | 'external' | 'advanced' | 'cache'>('local');
   const [totalResults, setTotalResults] = useState(0);
   const { selectedCompanies } = useBulkSelection();
+
+  // Cache states
+  const [isSavingToCache, setIsSavingToCache] = useState(false);
+  const [savedToCache, setSavedToCache] = useState(false);
+  const [cacheResults, setCacheResults] = useState<Company[]>([]);
+  const [cacheTotalResults, setCacheTotalResults] = useState(0);
+  const [isSearchingCache, setIsSearchingCache] = useState(false);
+
+  // Error state
+  const [searchError, setSearchError] = useState<{ message: string; details: string } | null>(null);
 
   // Sorting state
   const [sortBy, setSortBy] = useState<string>('name_asc');
@@ -267,13 +277,18 @@ export default function SearchPage() {
       setSearchMode('advanced');
       setCurrentFilters(filters);
       setExternalResults([]);
+      setSearchError(null);
 
       const params = buildQueryParams(filters, 0, BATCH_SIZE);
       const res = await fetch(`/api/companies/advanced-search?${params.toString()}`);
       const data = await res.json();
 
       if (data.error) {
-        console.error("Advanced search error:", data.error);
+        console.error("Advanced search error:", data.error, data.details);
+        setSearchError({
+          message: data.error,
+          details: data.details || 'An unexpected error occurred'
+        });
         setExternalResults([]);
         setTotalResults(0);
         setLoadedCount(0);
@@ -286,8 +301,12 @@ export default function SearchPage() {
         setTotalResults(0);
         setLoadedCount(0);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in advanced search:", error);
+      setSearchError({
+        message: 'Connection Error',
+        details: error.message || 'Failed to connect to the search service'
+      });
       setExternalResults([]);
       setTotalResults(0);
       setLoadedCount(0);
@@ -296,12 +315,95 @@ export default function SearchPage() {
     }
   }, [buildQueryParams]);
 
+  // Save companies to cache
+  const saveToCache = useCallback(async (companies: Company[]) => {
+    if (companies.length === 0) return;
+
+    setIsSavingToCache(true);
+    setSavedToCache(false);
+
+    try {
+      const res = await fetch('/api/companies/cache', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companies })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setSavedToCache(true);
+        // Auto-hide success message after 3 seconds
+        setTimeout(() => setSavedToCache(false), 3000);
+      } else {
+        console.error('Failed to save to cache:', data.error);
+      }
+    } catch (error) {
+      console.error('Error saving to cache:', error);
+    } finally {
+      setIsSavingToCache(false);
+    }
+  }, []);
+
+  // Search companies from cache with due date filters
+  const searchCache = useCallback(async (filters: AdvancedFiltersType) => {
+    setIsSearchingCache(true);
+    setSearchMode('cache');
+    setCacheResults([]);
+
+    try {
+      const params = new URLSearchParams();
+
+      if (filters.company_name_includes) {
+        params.append('company_name', filters.company_name_includes);
+      }
+
+      filters.company_status.forEach(status => {
+        params.append('company_status', status);
+      });
+
+      if (filters.confirmation_statement_from) {
+        params.append('confirmation_statement_from', filters.confirmation_statement_from);
+      }
+      if (filters.confirmation_statement_to) {
+        params.append('confirmation_statement_to', filters.confirmation_statement_to);
+      }
+      if (filters.accounts_due_from) {
+        params.append('accounts_due_from', filters.accounts_due_from);
+      }
+      if (filters.accounts_due_to) {
+        params.append('accounts_due_to', filters.accounts_due_to);
+      }
+
+      params.append('limit', '1000');
+      params.append('offset', '0');
+
+      const res = await fetch(`/api/companies/cache?${params.toString()}`);
+      const data = await res.json();
+
+      if (data.companies) {
+        setCacheResults(data.companies);
+        setCacheTotalResults(data.total_results || data.companies.length);
+      } else {
+        setCacheResults([]);
+        setCacheTotalResults(0);
+      }
+    } catch (error) {
+      console.error('Error searching cache:', error);
+      setCacheResults([]);
+      setCacheTotalResults(0);
+    } finally {
+      setIsSearchingCache(false);
+    }
+  }, []);
+
   // Load more results
   const loadMoreResults = useCallback(async (loadAll: boolean = false) => {
     if (!currentFilters || isLoadingMore || loadedCount >= totalResults) return;
 
     abortControllerRef.current = new AbortController();
     setIsLoadingMore(true);
+    setSearchError(null);
 
     try {
       let currentStartIndex = loadedCount;
@@ -323,11 +425,15 @@ export default function SearchPage() {
           signal: abortControllerRef.current.signal
         });
 
-        if (!res.ok) {
-          throw new Error('Failed to fetch more results');
-        }
-
         const data = await res.json();
+
+        if (data.error) {
+          setSearchError({
+            message: data.error,
+            details: data.details || 'Failed to load more results. This may be due to rate limiting.'
+          });
+          break;
+        }
 
         if (data.companies && data.companies.length > 0) {
           allNewCompanies = [...allNewCompanies, ...data.companies];
@@ -342,12 +448,16 @@ export default function SearchPage() {
 
         // Small delay between batches to avoid rate limiting
         if (loadAll && currentStartIndex < maxToLoad) {
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise(resolve => setTimeout(resolve, 200));
         }
       }
     } catch (error: any) {
       if (error.name !== 'AbortError') {
         console.error("Error loading more results:", error);
+        setSearchError({
+          message: 'Connection Error',
+          details: 'Failed to load more results. Please check your connection and try again.'
+        });
       }
     } finally {
       setIsLoadingMore(false);
@@ -372,9 +482,69 @@ export default function SearchPage() {
     setCurrentFilters(null);
   }, [stopLoading]);
 
+  // Apply client-side date filters for confirmation statement and accounts due
+  const applyDueDateFilters = useCallback((companies: Company[], filters: AdvancedFiltersType | null) => {
+    if (!filters) return companies;
+
+    return companies.filter(company => {
+      // Filter by confirmation statement due date
+      if (filters.confirmation_statement_from || filters.confirmation_statement_to) {
+        if (!company.confirmation_statement_due) return false;
+
+        const dueDate = new Date(company.confirmation_statement_due);
+
+        if (filters.confirmation_statement_from) {
+          const fromDate = new Date(filters.confirmation_statement_from);
+          if (dueDate < fromDate) return false;
+        }
+
+        if (filters.confirmation_statement_to) {
+          const toDate = new Date(filters.confirmation_statement_to);
+          if (dueDate > toDate) return false;
+        }
+      }
+
+      // Filter by accounts due date
+      if (filters.accounts_due_from || filters.accounts_due_to) {
+        if (!company.accounts_due) return false;
+
+        const dueDate = new Date(company.accounts_due);
+
+        if (filters.accounts_due_from) {
+          const fromDate = new Date(filters.accounts_due_from);
+          if (dueDate < fromDate) return false;
+        }
+
+        if (filters.accounts_due_to) {
+          const toDate = new Date(filters.accounts_due_to);
+          if (dueDate > toDate) return false;
+        }
+      }
+
+      return true;
+    });
+  }, []);
+
   // Determine which results to display
-  const baseResults = searchMode === 'local' ? filteredCompanies : externalResults;
-  const isDisplayLoading = searchMode === 'local' ? isLoading : isSearchingExternal;
+  const baseResultsRaw = searchMode === 'cache'
+    ? cacheResults
+    : searchMode === 'local'
+      ? filteredCompanies
+      : externalResults;
+
+  // Apply due date filters for advanced search
+  const baseResults = useMemo(() => {
+    if (searchMode === 'advanced' && currentFilters) {
+      return applyDueDateFilters(baseResultsRaw, currentFilters);
+    }
+    return baseResultsRaw;
+  }, [baseResultsRaw, searchMode, currentFilters, applyDueDateFilters]);
+
+  const isDisplayLoading = searchMode === 'cache'
+    ? isSearchingCache
+    : searchMode === 'local'
+      ? isLoading
+      : isSearchingExternal;
 
   // Sort results
   const sortedResults = useMemo(() => {
@@ -454,7 +624,117 @@ export default function SearchPage() {
           onSearch={handleAdvancedSearch}
           onClear={handleClearAdvancedSearch}
           isSearching={isSearchingExternal}
+          onSearchCache={searchCache}
+          isSearchingCache={isSearchingCache}
         />
+      </div>
+
+      {/* Search Mode Tabs & Save to Cache */}
+      <div className="bg-white rounded-2xl p-4">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          {/* Search Mode Tabs */}
+          <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => {
+                setSearchMode('local');
+                setExternalResults([]);
+                setCacheResults([]);
+              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                searchMode === 'local'
+                  ? 'bg-white text-primary shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Search className="w-4 h-4" />
+              Saved Companies
+            </button>
+            <button
+              onClick={() => {
+                if (cacheResults.length === 0 && searchMode !== 'cache') {
+                  // Trigger a search with empty filters to load all cached companies
+                  searchCache({
+                    company_name_includes: '',
+                    company_name_excludes: '',
+                    company_status: [],
+                    company_type: [],
+                    company_subtype: [],
+                    location: '',
+                    country: '',
+                    postal_code: '',
+                    sic_codes: '',
+                    incorporated_from: '',
+                    incorporated_to: '',
+                    dissolved_from: '',
+                    dissolved_to: '',
+                    confirmation_statement_from: '',
+                    confirmation_statement_to: '',
+                    accounts_due_from: '',
+                    accounts_due_to: '',
+                  });
+                } else {
+                  setSearchMode('cache');
+                }
+              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                searchMode === 'cache'
+                  ? 'bg-white text-green-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Database className="w-4 h-4" />
+              Search Cached
+              {cacheTotalResults > 0 && (
+                <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">
+                  {cacheTotalResults.toLocaleString()}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Save to Cache Button */}
+          {(searchMode === 'external' || searchMode === 'advanced') && externalResults.length > 0 && (
+            <div className="flex items-center gap-3">
+              {savedToCache && (
+                <span className="flex items-center gap-1 text-green-600 text-sm">
+                  <CheckCircle className="w-4 h-4" />
+                  Saved to cache!
+                </span>
+              )}
+              <button
+                onClick={() => saveToCache(externalResults)}
+                disabled={isSavingToCache}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  isSavingToCache
+                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                    : 'bg-green-600 hover:bg-green-700 text-white'
+                }`}
+              >
+                {isSavingToCache ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    Save {externalResults.length.toLocaleString()} to Cache
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Cache Info */}
+        {searchMode === 'cache' && (
+          <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
+            <p className="text-sm text-green-800">
+              <strong>Tip:</strong> Use the Confirmation Statement and Accounts Due date filters above to filter cached companies by due dates.
+              This feature only works with cached companies (not live Companies House searches).
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Main Results Container */}
@@ -465,11 +745,13 @@ export default function SearchPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-gray-200">
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-semibold text-gray-900">
-                {searchMode === 'advanced'
-                  ? 'Advanced Search Results'
-                  : searchMode === 'external'
-                    ? 'Companies House Results'
-                    : 'Saved Companies'}
+                {searchMode === 'cache'
+                  ? 'Cached Companies'
+                  : searchMode === 'advanced'
+                    ? 'Advanced Search Results'
+                    : searchMode === 'external'
+                      ? 'Companies House Results'
+                      : 'Saved Companies'}
               </h2>
               {searchMode === 'external' && (
                 <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
@@ -479,6 +761,12 @@ export default function SearchPage() {
               {searchMode === 'advanced' && (
                 <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
                   Advanced Search
+                </span>
+              )}
+              {searchMode === 'cache' && (
+                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                  <Database className="w-3 h-3 inline mr-1" />
+                  Local Database
                 </span>
               )}
             </div>
@@ -501,14 +789,16 @@ export default function SearchPage() {
                 </div>
               )}
 
-              {(searchMode === 'external' || searchMode === 'advanced') && externalResults.length > 0 && (
+              {(searchMode === 'external' || searchMode === 'advanced' || searchMode === 'cache') && (externalResults.length > 0 || cacheResults.length > 0) && (
                 <button
                   onClick={() => {
                     stopLoading();
                     setSearchMode('local');
                     setExternalResults([]);
+                    setCacheResults([]);
                     setTotalResults(0);
                     setLoadedCount(0);
+                    setCacheTotalResults(0);
                     setCurrentFilters(null);
                   }}
                   className="text-sm text-primary hover:font-bold transition-colors cursor-pointer"
@@ -520,37 +810,81 @@ export default function SearchPage() {
           </div>
         )}
 
+        {/* Error Display */}
+        {searchError && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-6 h-6 text-red-500 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-red-800">{searchError.message}</h3>
+                <p className="text-sm text-red-600 mt-1">{searchError.details}</p>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={() => {
+                      setSearchError(null);
+                      if (currentFilters) {
+                        handleAdvancedSearch(currentFilters);
+                      }
+                    }}
+                    className="text-sm px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-800 rounded-lg transition-colors"
+                  >
+                    Try Again
+                  </button>
+                  <button
+                    onClick={() => setSearchError(null)}
+                    className="text-sm px-3 py-1.5 text-red-600 hover:text-red-800 transition-colors"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+              <button
+                onClick={() => setSearchError(null)}
+                className="text-red-400 hover:text-red-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {isDisplayLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
               <p className="text-gray-500">
-                {searchMode === 'advanced'
-                  ? 'Performing advanced search...'
-                  : searchMode === 'external'
-                    ? 'Searching Companies House...'
-                    : 'Loading companies...'}
+                {searchMode === 'cache'
+                  ? 'Searching cached companies...'
+                  : searchMode === 'advanced'
+                    ? 'Performing advanced search...'
+                    : searchMode === 'external'
+                      ? 'Searching Companies House...'
+                      : 'Loading companies...'}
               </p>
             </div>
           </div>
         ) : sortedResults.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500 text-lg">
-              {searchMode === 'advanced'
-                ? 'No companies found matching your filters'
-                : searchMode === 'external'
-                  ? 'No companies found in Companies House'
-                  : searchQuery
-                    ? `No companies found matching "${searchQuery}"`
-                    : "No companies found"}
+              {searchMode === 'cache'
+                ? 'No cached companies found. Save some companies from a Companies House search first.'
+                : searchMode === 'advanced'
+                  ? 'No companies found matching your filters'
+                  : searchMode === 'external'
+                    ? 'No companies found in Companies House'
+                    : searchQuery
+                      ? `No companies found matching "${searchQuery}"`
+                      : "No companies found"}
             </p>
-            {(searchMode === 'external' || searchMode === 'advanced') ? (
+            {(searchMode === 'external' || searchMode === 'advanced' || searchMode === 'cache') ? (
               <button
                 onClick={() => {
                   setSearchMode('local');
                   setExternalResults([]);
+                  setCacheResults([]);
                   setTotalResults(0);
                   setLoadedCount(0);
+                  setCacheTotalResults(0);
                   setCurrentFilters(null);
                 }}
                 className="mt-3 text-primary hover:underline"

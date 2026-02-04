@@ -13,7 +13,8 @@ import {
   Filter,
   RotateCcw,
   Globe,
-  Briefcase
+  Briefcase,
+  Database
 } from "lucide-react";
 
 export type AdvancedSearchFilters = {
@@ -30,6 +31,10 @@ export type AdvancedSearchFilters = {
   incorporated_to: string;
   dissolved_from: string;
   dissolved_to: string;
+  confirmation_statement_from: string;
+  confirmation_statement_to: string;
+  accounts_due_from: string;
+  accounts_due_to: string;
 };
 
 const COMPANY_STATUSES = [
@@ -103,9 +108,11 @@ type Props = {
   onSearch: (filters: AdvancedSearchFilters) => void;
   onClear: () => void;
   isSearching: boolean;
+  onSearchCache?: (filters: AdvancedSearchFilters) => void;
+  isSearchingCache?: boolean;
 };
 
-export default function AdvancedSearchFilters({ onSearch, onClear, isSearching }: Props) {
+export default function AdvancedSearchFilters({ onSearch, onClear, isSearching, onSearchCache, isSearchingCache }: Props) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [filters, setFilters] = useState<AdvancedSearchFilters>({
     company_name_includes: '',
@@ -121,6 +128,10 @@ export default function AdvancedSearchFilters({ onSearch, onClear, isSearching }
     incorporated_to: '',
     dissolved_from: '',
     dissolved_to: '',
+    confirmation_statement_from: '',
+    confirmation_statement_to: '',
+    accounts_due_from: '',
+    accounts_due_to: '',
   });
 
   const [activeFiltersCount, setActiveFiltersCount] = useState(0);
@@ -142,6 +153,8 @@ export default function AdvancedSearchFilters({ onSearch, onClear, isSearching }
     if (newFilters.sic_codes) count++;
     if (newFilters.incorporated_from || newFilters.incorporated_to) count++;
     if (newFilters.dissolved_from || newFilters.dissolved_to) count++;
+    if (newFilters.confirmation_statement_from || newFilters.confirmation_statement_to) count++;
+    if (newFilters.accounts_due_from || newFilters.accounts_due_to) count++;
     setActiveFiltersCount(count);
   };
 
@@ -172,6 +185,10 @@ export default function AdvancedSearchFilters({ onSearch, onClear, isSearching }
       incorporated_to: '',
       dissolved_from: '',
       dissolved_to: '',
+      confirmation_statement_from: '',
+      confirmation_statement_to: '',
+      accounts_due_from: '',
+      accounts_due_to: '',
     });
     setActiveFiltersCount(0);
     onClear();
@@ -383,6 +400,53 @@ export default function AdvancedSearchFilters({ onSearch, onClear, isSearching }
                 </div>
               </div>
             </div>
+
+            {/* Due Dates Section */}
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <div className="bg-green-50 rounded-lg p-3 mb-4">
+                <p className="text-xs text-green-800">
+                  <strong>Due Date Filters:</strong> These filters work best with cached companies. First, search Companies House and save results to cache, then use "Search Cached" to filter by due dates.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-600">Confirmation Statement Due Between</label>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="date"
+                      value={filters.confirmation_statement_from}
+                      onChange={(e) => updateFilters('confirmation_statement_from', e.target.value)}
+                      className={dateInputClasses}
+                    />
+                    <span className="text-gray-400">to</span>
+                    <input
+                      type="date"
+                      value={filters.confirmation_statement_to}
+                      onChange={(e) => updateFilters('confirmation_statement_to', e.target.value)}
+                      className={dateInputClasses}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-600">Accounts Due Between</label>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="date"
+                      value={filters.accounts_due_from}
+                      onChange={(e) => updateFilters('accounts_due_from', e.target.value)}
+                      className={dateInputClasses}
+                    />
+                    <span className="text-gray-400">to</span>
+                    <input
+                      type="date"
+                      value={filters.accounts_due_to}
+                      onChange={(e) => updateFilters('accounts_due_to', e.target.value)}
+                      className={dateInputClasses}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Company Status */}
@@ -446,7 +510,7 @@ export default function AdvancedSearchFilters({ onSearch, onClear, isSearching }
           </div>
 
           {/* Action Buttons */}
-          <div className="mt-6 flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 border-t border-gray-100">
             <button
               onClick={handleClear}
               disabled={activeFiltersCount === 0}
@@ -455,23 +519,45 @@ export default function AdvancedSearchFilters({ onSearch, onClear, isSearching }
               <RotateCcw className="w-4 h-4" />
               Clear Filters
             </button>
-            <button
-              onClick={handleSearch}
-              disabled={!hasAnyFilter || isSearching}
-              className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity font-medium"
-            >
-              {isSearching ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Searching...
-                </>
-              ) : (
-                <>
-                  <Search className="w-4 h-4" />
-                  Search Companies House
-                </>
+            <div className="flex items-center gap-2">
+              {/* Search Cache Button - Only for due date filters */}
+              {onSearchCache && (filters.confirmation_statement_from || filters.confirmation_statement_to || filters.accounts_due_from || filters.accounts_due_to || filters.company_name_includes || filters.company_status.length > 0) && (
+                <button
+                  onClick={() => onSearchCache(filters)}
+                  disabled={isSearchingCache}
+                  className="flex items-center gap-2 px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                >
+                  {isSearchingCache ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Searching Cache...
+                    </>
+                  ) : (
+                    <>
+                      <Database className="w-4 h-4" />
+                      Search Cached
+                    </>
+                  )}
+                </button>
               )}
-            </button>
+              <button
+                onClick={handleSearch}
+                disabled={!hasAnyFilter || isSearching}
+                className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity font-medium"
+              >
+                {isSearching ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Searching...
+                  </>
+                ) : (
+                  <>
+                    <Search className="w-4 h-4" />
+                    Search Companies House
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

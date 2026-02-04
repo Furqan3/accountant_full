@@ -18,7 +18,9 @@ export async function GET(request: Request) {
     const incorporatedTo = searchParams.get('incorporated_to');
     const dissolvedFrom = searchParams.get('dissolved_from');
     const dissolvedTo = searchParams.get('dissolved_to');
-    const size = searchParams.get('size') || '50';
+    
+    // Use size 5000 per batch as requested (Maximum allowed by API)
+    const size = searchParams.get('size') || '5000';
     const startIndex = searchParams.get('start_index') || '0';
     const skipDetails = searchParams.get('skip_details') === 'true' || parseInt(startIndex) > 0;
 
@@ -61,6 +63,7 @@ export async function GET(request: Request) {
       queryParams.append('location', location);
     }
     // Combine country and postal code into location if provided
+    // The Companies House API uses a generic 'location' parameter for address searches
     if (country) {
       queryParams.append('location', country);
     }
@@ -99,9 +102,39 @@ export async function GET(request: Request) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Companies House Advanced Search API error:', response.status, errorText);
+
+      // Handle specific error codes with user-friendly messages
+      let errorMessage = 'Failed to search Companies House';
+      let errorDetails = response.statusText;
+
+      switch (response.status) {
+        case 429:
+          errorMessage = 'Rate limit exceeded';
+          errorDetails = 'Companies House API rate limit reached. Please wait a moment and try again.';
+          break;
+        case 500:
+        case 502:
+        case 503:
+        case 504:
+          errorMessage = 'Companies House API temporarily unavailable';
+          errorDetails = 'The Companies House API is experiencing issues. This may be due to rate limiting or server maintenance. Please try again in a few moments.';
+          break;
+        case 401:
+          errorMessage = 'Authentication failed';
+          errorDetails = 'Invalid API key for Companies House.';
+          break;
+        case 400:
+          errorMessage = 'Invalid search parameters';
+          errorDetails = 'Please check your search filters and try again.';
+          break;
+        default:
+          errorDetails = `API returned status ${response.status}: ${response.statusText}`;
+      }
+
       return NextResponse.json({
-        error: 'Failed to search Companies House',
-        details: response.statusText
+        error: errorMessage,
+        details: errorDetails,
+        status_code: response.status
       }, { status: response.status });
     }
 
