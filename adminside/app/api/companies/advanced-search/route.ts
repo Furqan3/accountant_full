@@ -24,6 +24,18 @@ export async function GET(request: Request) {
     const startIndex = searchParams.get('start_index') || '0';
     const skipDetails = searchParams.get('skip_details') === 'true' || parseInt(startIndex) > 0;
 
+    // Companies House API has an undocumented hard limit of ~10,000 results
+    // Requests with start_index >= 10000 return 500 errors
+    const MAX_START_INDEX = 10000;
+    if (parseInt(startIndex) >= MAX_START_INDEX) {
+      return NextResponse.json({
+        error: 'Maximum results limit reached',
+        details: 'The Companies House API only allows access to the first 10,000 results. Please refine your search filters to get more specific results.',
+        limit_reached: true,
+        max_results: MAX_START_INDEX
+      }, { status: 400 });
+    }
+
     // At least one filter must be provided
     if (!companyNameIncludes && !location && !country && !postalCode &&
         companyStatus.length === 0 && companyType.length === 0 && sicCodes.length === 0) {

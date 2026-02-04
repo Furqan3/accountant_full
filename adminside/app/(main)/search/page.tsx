@@ -98,6 +98,7 @@ const SORT_OPTIONS: SortOption[] = [
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const BATCH_SIZE = 500; // Number of results to fetch per batch
+const MAX_API_RESULTS = 10000; // Companies House API limit
 
 export default function SearchPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -399,7 +400,7 @@ export default function SearchPage() {
 
   // Load more results
   const loadMoreResults = useCallback(async (loadAll: boolean = false) => {
-    if (!currentFilters || isLoadingMore || loadedCount >= totalResults) return;
+    if (!currentFilters || isLoadingMore || loadedCount >= totalResults || loadedCount >= MAX_API_RESULTS) return;
 
     abortControllerRef.current = new AbortController();
     setIsLoadingMore(true);
@@ -409,10 +410,11 @@ export default function SearchPage() {
       let currentStartIndex = loadedCount;
       let allNewCompanies: Company[] = [];
 
-      // If loadAll, fetch in batches until we have all results
-      const maxToLoad = loadAll ? totalResults : loadedCount + BATCH_SIZE;
+      // If loadAll, fetch in batches until we have all results (capped at API limit)
+      const effectiveMax = Math.min(totalResults, MAX_API_RESULTS);
+      const maxToLoad = loadAll ? effectiveMax : Math.min(loadedCount + BATCH_SIZE, effectiveMax);
 
-      while (currentStartIndex < maxToLoad && currentStartIndex < totalResults) {
+      while (currentStartIndex < maxToLoad && currentStartIndex < effectiveMax) {
         // Check if aborted
         if (abortControllerRef.current.signal.aborted) {
           break;
@@ -428,10 +430,18 @@ export default function SearchPage() {
         const data = await res.json();
 
         if (data.error) {
-          setSearchError({
-            message: data.error,
-            details: data.details || 'Failed to load more results. This may be due to rate limiting.'
-          });
+          // Handle the specific limit_reached error gracefully
+          if (data.limit_reached) {
+            setSearchError({
+              message: 'API Limit Reached',
+              details: 'The Companies House API only allows access to the first 10,000 results. Refine your search filters for more specific results.'
+            });
+          } else {
+            setSearchError({
+              message: data.error,
+              details: data.details || 'Failed to load more results. This may be due to rate limiting.'
+            });
+          }
           break;
         }
 
@@ -602,9 +612,10 @@ export default function SearchPage() {
     return pages;
   };
 
-  // Check if there are more results to load
-  const hasMoreResults = searchMode === 'advanced' && loadedCount < totalResults;
-  const remainingResults = totalResults - loadedCount;
+  // Check if there are more results to load (capped at API limit)
+  const hasMoreResults = searchMode === 'advanced' && loadedCount < totalResults && loadedCount < MAX_API_RESULTS;
+  const remainingResults = Math.min(totalResults - loadedCount, MAX_API_RESULTS - loadedCount);
+  const reachedApiLimit = searchMode === 'advanced' && loadedCount >= MAX_API_RESULTS && totalResults > MAX_API_RESULTS;
 
   return (
     <div className={`flex flex-col gap-4 transition-all ${selectedCompanies.length > 0 ? 'pr-[320px]' : ''}`}>
@@ -946,7 +957,7 @@ export default function SearchPage() {
                 <div className="text-center sm:text-left">
                   <p className="font-medium text-gray-800">
                     {isLoadingMore ? (
-                      <>Loading... {loadedCount.toLocaleString()} of {totalResults.toLocaleString()} companies loaded</>
+                      <>Loading... {loadedCount.toLocaleString()} of {Math.min(totalResults, MAX_API_RESULTS).toLocaleString()} companies loaded</>
                     ) : (
                       <>{remainingResults.toLocaleString()} more companies available</>
                     )}
@@ -956,6 +967,11 @@ export default function SearchPage() {
                       ? 'Fetching data from Companies House...'
                       : 'Click to load more results from Companies House API'}
                   </p>
+                  {totalResults > MAX_API_RESULTS && (
+                    <p className="text-xs text-amber-600 mt-1">
+                      Note: API limit is {MAX_API_RESULTS.toLocaleString()} results. {(totalResults - MAX_API_RESULTS).toLocaleString()} results are not accessible.
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   {isLoadingMore ? (
@@ -985,6 +1001,24 @@ export default function SearchPage() {
                       )}
                     </>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* API Limit Reached Banner */}
+            {reachedApiLimit && (
+              <div className="bg-gradient-to-r from-amber-50 to-orange-100 rounded-xl p-4 border border-amber-200">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-amber-800">
+                      API Limit Reached - {MAX_API_RESULTS.toLocaleString()} of {totalResults.toLocaleString()} results loaded
+                    </p>
+                    <p className="text-sm text-amber-700 mt-1">
+                      The Companies House API only allows access to the first 10,000 results.
+                      To access more companies, please refine your search filters to get more specific results.
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
