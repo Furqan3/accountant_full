@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Logo from "@/app/shared/logo";
 import { useAuth } from "@/contexts/auth-context";
+import { supabase } from "@/lib/supabase";
 
 export default function SignIn() {
   const router = useRouter();
@@ -34,9 +35,24 @@ export default function SignIn() {
         setError(signInError.message || "Failed to sign in");
         setLoading(false);
       } else {
-        console.log("✅ Sign in successful, waiting for redirect...");
-        // Loading state will remain true until redirect happens
-        // This prevents multiple submissions
+        // Verify user is an admin
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (authUser) {
+          const { data: adminUser } = await supabase
+            .from("admin_users")
+            .select("id")
+            .eq("user_id", authUser.id)
+            .maybeSingle();
+
+          if (!adminUser) {
+            await supabase.auth.signOut();
+            setError("Access denied. This portal is for admin users only.");
+            setLoading(false);
+            return;
+          }
+        }
+
+        console.log("✅ Admin sign in successful, waiting for redirect...");
         router.push("/dashboard");
       }
     } catch (err) {
