@@ -14,6 +14,7 @@ interface AuthContextType {
   loading: boolean
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
+  refreshSession: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   signOut: async () => {},
   refreshProfile: async () => {},
+  refreshSession: async () => {},
 })
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -89,6 +91,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const refreshSession = async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    setSession(session)
+    setUser(session?.user ?? null)
+    if (session?.user) {
+      await fetchProfile(session.user.id)
+    } else {
+      setProfile(null)
+    }
+    setLoading(false)
+  }
+
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -106,29 +120,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      // Block admin users from accessing client portal
-      if (session?.user) {
-        const { data: adminUser } = await supabase
-          .from('admin_users')
-          .select('id')
-          .eq('user_id', session.user.id)
-          .maybeSingle()
-
-        if (adminUser) {
-          await supabase.auth.signOut()
-          setSession(null)
-          setUser(null)
-          setProfile(null)
-          setLoading(false)
-          return
-        }
-      }
-
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
 
-      // Fetch profile when user signs in
       if (session?.user) {
         fetchProfile(session.user.id)
       } else {
@@ -149,7 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, signOut, refreshProfile, refreshSession }}>
       {children}
     </AuthContext.Provider>
   )

@@ -8,7 +8,7 @@ import { sendEmail, getOrderConfirmationEmail } from "@/lib/email";
 // Helper to format service type for display
 function formatServiceType(serviceType: string): string {
   const serviceNames: { [key: string]: string } = {
-    'confirmation-statement': 'Confirmation Statement',
+    'confirmation-statement': 'File Confirmation Statement',
     'annual-accounts': 'Annual Accounts',
     'vat-return': 'VAT Return',
     'corporation-tax': 'Corporation Tax',
@@ -16,7 +16,14 @@ function formatServiceType(serviceType: string): string {
     'bookkeeping': 'Bookkeeping',
     'company-formation': 'Company Formation',
     'registered-office': 'Registered Office',
-    'dormant-accounts': 'Dormant Accounts',
+    'dormant-accounts': 'File Dormant Accounts',
+    'vat-registration': 'Register Company for VAT',
+    'paye-registration': 'Register Company for PAYE',
+    'change-company-name': 'Change Company Name',
+    'change-registered-address': 'Change Registered Address',
+    'company-dissolution': 'Company Dissolution',
+    'utr-registration': 'UTR Registration',
+    'change-directors': 'Change Your Directors',
   }
   return serviceNames[serviceType] || serviceType?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Service'
 }
@@ -93,7 +100,8 @@ export async function POST(req: Request) {
           const metaItems = typeof metadata.items === 'string' ? JSON.parse(metadata.items) : metadata.items;
           items = metaItems.map((item: any) => ({
             name: formatServiceType(item.name || item.service_type || 'Service'),
-            price: item.price || 0,
+            // item.price from cart is in pounds, convert to pence for email display
+            price: Math.round((item.price || 0) * 100),
             quantity: item.quantity || 1,
             companyName: item.companyName,
             companyNumber: item.companyNumber

@@ -5,11 +5,13 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase"
+import { useAuth } from "@/context/auth-context"
 import { Eye, EyeOff, Mail, Lock } from "lucide-react"
 
 export default function SignInForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { refreshSession } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -40,21 +42,9 @@ export default function SignInForm() {
       if (signInError) {
         setError(signInError.message)
       } else if (data.user) {
-        // Check if this user is an admin - block admin users from client portal
-        const { data: adminUser } = await supabase
-          .from("admin_users")
-          .select("id")
-          .eq("user_id", data.user.id)
-          .maybeSingle()
-
-        if (adminUser) {
-          await supabase.auth.signOut()
-          setError("This account is registered as an admin. Please use the admin portal to sign in.")
-          return
-        }
-
+        // Update auth context with the new session before navigating
+        await refreshSession()
         router.push(redirectPath)
-        router.refresh()
       }
     } catch (err: any) {
       setError(err.message || "Failed to sign in")

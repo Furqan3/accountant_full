@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createServiceRoleClient } from '@/lib/supabase'
 import { sendEmail, getPaymentConfirmationEmail } from '@/lib/email'
+import { generateInvoiceNumber, generateInvoicePdf, calculateVat, getInvoiceEmailHtml } from '@/lib/invoice'
+import type { InvoiceLineItem } from '@/lib/invoice'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
@@ -9,7 +11,7 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
 // Helper to format service type for display
 function formatServiceType(serviceType: string): string {
   const serviceNames: { [key: string]: string } = {
-    'confirmation-statement': 'Confirmation Statement',
+    'confirmation-statement': 'File Confirmation Statement',
     'annual-accounts': 'Annual Accounts',
     'vat-return': 'VAT Return',
     'corporation-tax': 'Corporation Tax',
@@ -17,7 +19,14 @@ function formatServiceType(serviceType: string): string {
     'bookkeeping': 'Bookkeeping',
     'company-formation': 'Company Formation',
     'registered-office': 'Registered Office',
-    'dormant-accounts': 'Dormant Accounts',
+    'dormant-accounts': 'File Dormant Accounts',
+    'vat-registration': 'Register Company for VAT',
+    'paye-registration': 'Register Company for PAYE',
+    'change-company-name': 'Change Company Name',
+    'change-registered-address': 'Change Registered Address',
+    'company-dissolution': 'Company Dissolution',
+    'utr-registration': 'UTR Registration',
+    'change-directors': 'Change Your Directors',
   }
   return serviceNames[serviceType] || serviceType?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Service'
 }
@@ -116,30 +125,110 @@ export async function POST(req: NextRequest) {
                   } catch (e) {}
                 }
 
+                // Generate invoice PDF
+                const invoiceNumber = generateInvoiceNumber(order.id)
+                const now = new Date()
+                const dateOfIssue = now.toLocaleDateString('en-GB', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric'
+                })
+
+                const invoiceLineItems: InvoiceLineItem[] = items.length > 0
+                  ? items.map(item => {
+                      // item.price from cart metadata is in pounds, convert to pence for invoice calculations
+                      const priceInPence = Math.round(item.price * 100)
+                      const totalPence = priceInPence * (item.quantity || 1)
+                      const { exclTax, vatAmount } = calculateVat(totalPence)
+                      const unitExclTax = calculateVat(priceInPence).exclTax
+                      return {
+                        description: item.name + (item.companyName ? ` - ${item.companyName}` : ''),
+                        quantity: item.quantity || 1,
+                        unitPriceExclTax: unitExclTax,
+                        taxAmount: vatAmount,
+                        amountExclTax: exclTax,
+                      }
+                    })
+                  : (() => {
+                      const { exclTax, vatAmount } = calculateVat(paymentIntent.amount)
+                      return [{
+                        description: serviceName + (companyName ? ` - ${companyName}` : ''),
+                        quantity: 1,
+                        unitPriceExclTax: exclTax,
+                        taxAmount: vatAmount,
+                        amountExclTax: exclTax,
+                      }]
+                    })()
+
+                const subtotalExclTax = invoiceLineItems.reduce((sum, item) => sum + item.amountExclTax, 0)
+                const totalVat = invoiceLineItems.reduce((sum, item) => sum + item.taxAmount, 0)
+
+                let invoicePdfBuffer: Buffer | null = null
+                try {
+                  invoicePdfBuffer = await generateInvoicePdf({
+                    invoiceNumber,
+                    dateOfIssue,
+                    dateDue: dateOfIssue,
+                    customerName: userData?.full_name || 'Customer',
+                    customerEmail: user.email,
+                    lineItems: invoiceLineItems,
+                    subtotalExclTax,
+                    vatAmount: totalVat,
+                    totalInclTax: paymentIntent.amount,
+                  })
+                } catch (pdfError) {
+                  console.error('Error generating invoice PDF:', pdfError)
+                }
+
+                const pdfAttachment = invoicePdfBuffer
+                  ? [{ filename: `${invoiceNumber}.pdf`, content: invoicePdfBuffer }]
+                  : undefined
+
+                // Send payment confirmation email (invoice format) with PDF attached
                 const emailContent = getPaymentConfirmationEmail({
                   userName: userData?.full_name || 'Customer',
-                  orderNumber: order.id.slice(0, 8).toUpperCase(),
-                  amount: paymentIntent.amount,
-                  serviceName,
-                  companyName,
-                  items: items.length > 0 ? items : undefined,
-                  paymentDate: new Date().toLocaleDateString('en-GB', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })
+                  userEmail: user.email,
+                  invoiceNumber,
+                  dateOfIssue,
+                  items: invoiceLineItems.map(item => ({
+                    description: item.description,
+                    quantity: item.quantity,
+                    unitPriceExclTax: item.unitPriceExclTax,
+                    taxPercent: 20,
+                    amountExclTax: item.amountExclTax,
+                  })),
+                  subtotalExclTax,
+                  vatAmount: totalVat,
+                  totalInclTax: paymentIntent.amount,
                 })
 
                 await sendEmail({
                   to: user.email,
                   subject: emailContent.subject,
                   html: emailContent.html,
-                  text: emailContent.text
+                  text: emailContent.text,
+                  attachments: pdfAttachment,
                 })
 
-                console.log('Payment receipt email sent to:', user.email)
+                // Send separate invoice email with PDF attached
+                if (invoicePdfBuffer) {
+                  const invoiceEmail = getInvoiceEmailHtml({
+                    customerName: userData?.full_name || 'Customer',
+                    invoiceNumber,
+                    amount: paymentIntent.amount,
+                    dateOfIssue,
+                  })
+
+                  await sendEmail({
+                    to: user.email,
+                    subject: invoiceEmail.subject,
+                    html: invoiceEmail.html,
+                    text: invoiceEmail.text,
+                    attachments: pdfAttachment,
+                  })
+                }
+
+                console.log('Payment receipt and invoice emails sent to:', user.email)
               }
             } catch (emailError) {
               console.error('Error sending payment confirmation email:', emailError)
